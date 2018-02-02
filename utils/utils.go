@@ -51,7 +51,7 @@ func GetAuthConfig(username, password, registry string) (types.AuthConfig, error
 			return creds, nil
 		}
 		// add https:// to user input and try again
-		// see https://github.com/jessfraz/reg/issues/32
+		// see https://github.com/cdrage/reg/issues/32
 		if !strings.HasPrefix(registry, "https://") && !strings.HasPrefix(registry, "http://") {
 			if creds, ok := dcfg.AuthConfigs["https://"+registry]; ok {
 				return creds, nil

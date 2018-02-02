@@ -16,8 +16,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
-	"github.com/jessfraz/reg/clair"
-	"github.com/jessfraz/reg/registry"
+	"github.com/cdrage/reg/clair"
+	"github.com/cdrage/reg/registry"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/russross/blackfriday.v2"
