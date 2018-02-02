@@ -1,26 +1,3 @@
-@import url('https://fonts.googleapis.com/css?family=Open+Sans:400,300');
-/* Have to use @import for the font, as you can only specify a single stylesheet */
-* {
-  margin: 0;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-}
-html {
-  min-height: 100%;
-  border-top: 10px solid #ECEEF1;
-  border-bottom: 10px solid #ECEEF1;
-  color: #61666c;
-  font-weight: 300;
-  font-size: 1em;
-  font-family: 'Open Sans', sans-serif;
-  line-height: 2em;
-}
-body {
-  padding: 20px;
-  -webkit-backface-visibility: hidden;
-}
 code {
   font-family: Inconsolata,monospace;
 }
@@ -149,9 +126,8 @@ a.clear:hover {
 \*------------------------------------*/
 table {
   border-collapse: collapse;
-  font-size: .875em;
   max-width: 100%;
-  margin: 20px auto 0px auto;
+  margin: 0px auto 0px auto;
 }
 tr {
   outline: 0;
@@ -162,7 +138,8 @@ tr:hover td {
 }
 th {
   text-align: left;
-  font-size: .75em;
+  font-size: 1em;
+  font-weight:500;
   padding-right: 20px;
 }
 /* 2nd Column: Filename */
@@ -179,7 +156,8 @@ tr td:first-of-type {
   padding-right: 10px;
 }
 td {
-  padding: 5px 0;
+  padding: 10px 0;
+  font-weight:300;
   outline: 0;
   border: 0;
   border-bottom: 1px solid #edf1f5;
@@ -244,9 +222,4 @@ tr.parent a {
   text-align: center;
   font-size: .75em;
   margin-top: 50px;
-}
-img {
-  outline: none;
-  border: none;
-  max-height: 16px;
 }

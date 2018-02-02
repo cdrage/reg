@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -19,9 +20,10 @@ import (
 
 const (
 	// VERSION is the binary version.
-	VERSION = "v0.2.0"
-
+	VERSION          = "v0.2.0"
 	dockerConfigPath = ".docker/config.json"
+	staticFileDir    = "static"
+	dockerfileDir    = "dockerfiles"
 )
 
 var (
@@ -124,12 +126,13 @@ func main() {
 			}
 		}
 
-		// get the path to the static directory
+		// get the path to the static and dockerfiles directory
 		wd, err := os.Getwd()
 		if err != nil {
 			logrus.Fatal(err)
 		}
-		staticDir := filepath.Join(wd, "static")
+		staticDir := filepath.Join(wd, staticFileDir)
+		dockerfilesDir := filepath.Join(wd, dockerfileDir)
 
 		// create the template
 		templateDir := filepath.Join(staticDir, "../templates")
@@ -174,6 +177,7 @@ func main() {
 			},
 		}
 
+		// Retrieve all the "footers" and "headers" templates
 		tmpl = template.Must(template.New("").Funcs(funcMap).ParseGlob(templateDir + "/*.html"))
 
 		rc := registryController{
@@ -185,6 +189,12 @@ func main() {
 		logrus.Info("creating initial static index")
 		if err := rc.repositories(staticDir); err != nil {
 			logrus.Fatalf("Error creating index: %v", err)
+		}
+
+		// retrieve all the dockerfiles
+		logrus.Info("retrieving dockerfiles")
+		if err := rc.dockerfiles(dockerfilesDir); err != nil {
+			logrus.Fatalf("Error retrieving initial dockerfiles: %v", err)
 		}
 
 		if c.GlobalBool("once") {
@@ -199,6 +209,7 @@ func main() {
 		}
 		ticker := time.NewTicker(dur)
 
+		// TODO! implement README.md updates on site
 		go func() {
 			// create more indexes every X minutes based off interval
 			for range ticker.C {
@@ -214,27 +225,39 @@ func main() {
 			}
 		}()
 
-		// create mux server
-		mux := mux.NewRouter()
-		mux.UseEncodedPath()
+		// create r server
+		r := mux.NewRouter()
+		r.UseEncodedPath()
+		r.StrictSlash(true)
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		mux.HandleFunc("/repo/{repo}/tags", rc.tagsHandler)
-		mux.HandleFunc("/repo/{repo}/tags/", rc.tagsHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
-		mux.HandleFunc("/repo/{repo}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
-		mux.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandler))
-		mux.Handle("/", staticHandler)
+		r.HandleFunc("/repo/{username}/{container}", rc.tagsHandler)
+		r.HandleFunc("/repo/{username}/{container}/", rc.tagsHandler)
+		r.HandleFunc("/repo/{username}/{container}/tag/{tag}", rc.vulnerabilitiesHandler)
+		r.HandleFunc("/repo/{username}/{container}/tag/{tag}/", rc.vulnerabilitiesHandler)
+		/*
+			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
+			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
+			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
+		*/
+		r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/", staticHandler)
+
+		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			t, err := route.GetPathTemplate()
+			if err != nil {
+				return err
+			}
+			fmt.Println(t)
+			return nil
+		})
 
 		// set up the server
 		port := c.String("port")
 		server := &http.Server{
 			Addr:    ":" + port,
-			Handler: mux,
+			Handler: r,
 		}
 		logrus.Infof("Starting server on port %q", port)
 		if c.String("cert") != "" && c.String("key") != "" {

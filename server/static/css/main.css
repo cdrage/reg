@@ -1,0 +1,79 @@
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+  font-weight: 300 !important;  
+}
+
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight:300 !important;
+  font-size:1.2rem;
+}
+
+.jumbotron {
+  text-align:left;
+  background-color: #0082c8;
+  color:#fff;
+}
+
+.jumbotron .display-6 {
+  padding-bottom:20px;
+}
+
+.header h4 {
+  color: #000;
+}
+
+.nav-pills .nav-link {
+  color: #61666c;
+}
+
+.nav-pills .nav-link.active, .nav-pills .show>.nav-link {
+  color: #000;
+  background-color: transparent;
+}
+
+.logo {
+  height: 1.8em;
+  display:inline-block;
+}
+
+.marketing p {
+
+  padding-bottom:2rem;
+
+}
+
+.docker-pull {
+  font-family: Inconsolata,monospace;
+}
+
+.repo-header {
+  padding-bottom:10px;
+  padding-top:20px;
+}
+
+.hljs {
+  font-size:0.75em;
+}
+
+.highlight-code {
+  width:100%;
+}
+
+/*------------------------------------*\
+    Footer
+\*------------------------------------*/
+.footer {
+  text-align: center;
+  font-size: .75em;
+  margin-bottom:50px;
+}
+
+.markdown-body {
+  padding:10px;
+  background: #f8f8f8;
+  width:100%;
+}
+
+.markdown-body h1,h2,h3,h4,h5,h6 {
+  text-align:left !important;
+}

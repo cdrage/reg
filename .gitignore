@@ -5,6 +5,8 @@
 *.a
 *.so
 
+server/dockerfiles/
+
 # Folders
 _obj
 _test
