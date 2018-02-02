@@ -1,10 +1,11 @@
-FROM golang:latest 
-RUN mkdir /app 
-ADD . /app/ 
-WORKDIR /app 
+FROM centos:latest
 
-RUN cd server && \
-    go build -o main . 
+ENV PATH /go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /go
 
-ENTRYPOINT ["/app/server/reg-server"]
+RUN yum install -y go git
+
+RUN go get -v github.com/cdrage/reg
+
+ENTRYPOINT ["reg-server"]
 CMD ["--help"]
