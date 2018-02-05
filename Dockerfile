@@ -1,13 +1,11 @@
-FROM golang:latest 
+FROM centos:latest
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
 
-RUN mkdir /go
-ADD . /go/src/github.com/cdrage/reg
-WORKDIR /go/src/github.com/cdrage/reg
+RUN yum install -y go
 
-RUN go build -o reg-server ./server
+RUN go get -v github.com/cdrage/reg
 
-ENTRYPOINT ["./reg-server"]
+ENTRYPOINT ["reg-server"]
 CMD ["--help"]

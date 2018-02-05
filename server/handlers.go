@@ -15,9 +15,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/gorilla/mux"
 	"github.com/cdrage/reg/clair"
 	"github.com/cdrage/reg/registry"
+	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/russross/blackfriday.v2"
@@ -255,6 +255,8 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		logrus.Warningf("Unable to retrieve README.md from directory:", err)
 	}
+
+	// TODO retrieve the namespace.yaml file
 
 	// Sanitize and convert markdown outputa
 
