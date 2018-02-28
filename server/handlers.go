@@ -182,10 +182,10 @@ func (rc *registryController) repositories(staticDir string) error {
 	}
 
 	// parse & execute the template
-	logrus.Info("executing the template repositories")
+	logrus.Info("executing the template containers")
 
 	// Use /repo/index.html instead
-	path := filepath.Join(staticDir, "/repo/index.html")
+	path := filepath.Join(staticDir, "/containers/index.html")
 	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
 		return err
 	}
@@ -196,9 +196,9 @@ func (rc *registryController) repositories(staticDir string) error {
 	}
 	defer f.Close()
 
-	if err := tmpl.ExecuteTemplate(f, "repositories", result); err != nil {
+	if err := tmpl.ExecuteTemplate(f, "containers", result); err != nil {
 		f.Close()
-		return fmt.Errorf("execute template repositories failed: %v", err)
+		return fmt.Errorf("execute template containers failed: %v", err)
 	}
 
 	updating = false

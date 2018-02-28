@@ -1,4 +1,4 @@
-{{define "repositories"}}
+{{define "containers"}}
 
 
 <html>
@@ -32,13 +32,13 @@
             {{ range $key, $value := .Repositories }}
             <tr>
                 <td valign="top">
-                    <a href="/repo/{{ $value.Name }}/">
+                    <a href="/{{ $value.Name }}/">
                     {{ $value.Name }}
                     </a>
                 </td>
 
                 <td align="right" nowrap>
-                    <a href="/repo/{{ $value.Name }}/">
+                    <a href="/{{ $value.Name }}/">
                     <code>{{ $value.URI }}</code>
                     </a>
                 </td>

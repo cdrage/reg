@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/cdrage/reg/clair"
 	"github.com/cdrage/reg/registry"
 	"github.com/cdrage/reg/utils"
+	"github.com/gorilla/mux"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -142,7 +142,7 @@ func main() {
 		if _, err := os.Stat(vulns); os.IsNotExist(err) {
 			logrus.Fatalf("Template %s not found", vulns)
 		}
-		layout := filepath.Join(templateDir, "repositories.html")
+		layout := filepath.Join(templateDir, "containers.html")
 		if _, err := os.Stat(layout); os.IsNotExist(err) {
 			logrus.Fatalf("Template %s not found", layout)
 		}
@@ -232,15 +232,30 @@ func main() {
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-		r.HandleFunc("/repo/{username}/{container}", rc.tagsHandler)
-		r.HandleFunc("/repo/{username}/{container}/", rc.tagsHandler)
-		r.HandleFunc("/repo/{username}/{container}/tag/{tag}", rc.vulnerabilitiesHandler)
-		r.HandleFunc("/repo/{username}/{container}/tag/{tag}/", rc.vulnerabilitiesHandler)
+
 		/*
+			r.HandleFunc("/repo/{username}/{container}", rc.tagsHandler)
+			r.HandleFunc("/repo/{username}/{container}/", rc.tagsHandler)
+			r.HandleFunc("/repo/{username}/{container}/tag/{tag}", rc.vulnerabilitiesHandler)
+			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/", rc.vulnerabilitiesHandler)
 			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
 			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
 			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
 		*/
+
+		// Make sure we handle css,img and js
+		r.PathPrefix("/css/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/css/", staticHandler)
+		r.PathPrefix("/img/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/img/", staticHandler)
+		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/js/", staticHandler)
+
+		// container handler
+		r.HandleFunc("/{username}/{container}", rc.tagsHandler)
+		r.HandleFunc("/{username}/{container}/", rc.tagsHandler)
+
+		// All other files
 		r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
 		r.Handle("/", staticHandler)
 
