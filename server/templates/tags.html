@@ -16,49 +16,73 @@
 
     <main role="main">
     <h2 class="text-center">{{ .RegistryDomain }}/{{ .Name }}</h2>
+    <p class="pull-commands">
+    docker pull {{ .RegistryDomain }}/{{ .Name }}
+    <br>
+    rkt --insecure-options=image fetch docker://{{ .RegistryDomain }}/{{ .Name }}
+    <br>
+    skopeo --insecure-policy copy docker://{{ .RegistryDomain }}/{{ .Name }} oci:{{ .Name }}:latest
+    </p>
 
-    <div class="row">
-      <h4 class="repo-header">Tags</h4>
-        <table>
-            <tr>
-                <th>Name</th>
-                <th>Tag</th>
-                <th>Created</th>
-            </tr>
-            {{ range $key, $value := .Repositories }}
-            <tr>
-                <td valign="left" nowrap>
-                    {{ $value.Name }}
-                </td>
-                <td align="right" nowrap>
-                    {{ $value.Tag }}
-                </td>
-                <td align="right" nowrap>
-                    {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
-                </td>
-            </tr>
-            {{ end }}
-        </table>
+      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="tags-tab" data-toggle="pill" href="#tags" role="tab" aria-controls="tags" aria-selected="true" style="padding-left:0;">Tags</a>
+        </li>
+        {{ if ne .Dockerfile "" }}
+        <li class="nav-item">
+          <a class="nav-link" id="dockerfile-tab" data-toggle="pill" href="#dockerfile" role="tab" aria-controls="dockerfile" aria-selected="false">Dockerfile</a>
+        </li>
+        {{ end }}
+        {{ if ne .Readme "" }}
+        <li class="nav-item">
+          <a class="nav-link" id="description-tab" data-toggle="pill" href="#description" role="tab" aria-controls="description" aria-selected="false">Description</a>
+        </li>
+        {{ end }}
+      </ul>
+
+      <div class="tab-content" id="pills-tabContent">
+
+        <div class="tab-pane fade show active" id="tags" role="tabpanel" aria-labelledby="tags-tab">
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Tag</th>
+                    <th>Created</th>
+                </tr>
+                {{ range $key, $value := .Repositories }}
+                <tr>
+                    <td valign="left" nowrap>
+                        {{ $value.Name }}
+                    </td>
+                    <td align="right" nowrap>
+                        {{ $value.Tag }}
+                    </td>
+                    <td align="right" nowrap>
+                        {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
+                    </td>
+                </tr>
+                {{ end }}
+            </table>
+        </div>
+
+        {{ if ne .Dockerfile "" }}
+          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">
+            <pre class="highlight-code"><code class="dockerfile">{{ .Dockerfile }}</code></pre>
+          </div>
+        {{ end }}
+
+        {{ if ne .Readme "" }}
+            <div class="tab-pane fade" id="description" role="tabpanel" aria-labelledby="description-tab">
+          <div class="markdown-body">
+          {{ .Readme }}
+          </div>
+        {{ end }}
+
+
     </div>
 
-    {{ if ne .Dockerfile "" }}
-    <div class="row">
-      <h4 class="repo-header">Dockerfile</h4>
-<br>
-      <pre class="highlight-code"><code class="dockerfile">{{ .Dockerfile }}</code></pre>
 
-    </div>
-    {{ end }}
 
-    {{ if ne .Readme "" }}
-    <div class="row">
-      <h4 class="repo-header">Description</h4>
-      <div class="markdown-body">
-      {{ .Readme }}
-      </div>
-
-    </div>
-    {{ end }}
 
     </div>
     {{template "footer" .}}

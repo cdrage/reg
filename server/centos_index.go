@@ -124,25 +124,30 @@ func retrieveIndex() ([]Repos, error) {
 				// Retrieve the Dockerfile
 				dockerFile, err := retrieveGitFile(c.GitURL, c.GitBranch, c.GitPath, c.TargetFile)
 				if err != nil {
-					log.Warningf("WARNING: Unable to retrieve '%s' '%s'. Error: %s", c.GitURL, c.GitBranch, err)
+					log.Debugf("Unable to retrieve Dockerfile: '%s' '%s'. Error: %s", c.GitURL, c.GitBranch, err)
+					log.Warnf("Unable to retrieve Dockerfile for %s/%s", c.AppID, c.JobID)
 				} else {
 					// Add the Dockerfile to the Namespace struct
 					b.Projects[i].Dockerfile = dockerFile
 				}
 
 				// Retrieve the README
-				readme, err := retrieveGitFile(c.GitURL, c.GitBranch, c.GitPath, "README.md")
-				if err == nil {
-					b.Projects[i].Readme = readme
-				} else {
-					log.Warningf("WARNING: README Dockerfile dir: Unable to retrieve '%s' '%s'. Error: %s. Trying the root directory.", c.GitURL, c.GitBranch, err)
-					readme, err := retrieveGitFile(c.GitURL, c.GitBranch, "/", "README.md")
-					if err == nil {
-						b.Projects[i].Readme = readme
-					} else {
-						log.Warningf("WARNING: README root dir: Unable to retrieve '%s' '%s'. Error: %s.", c.GitURL, c.GitBranch, err)
+
+				// Try retrieving from Dockerfile directory first.
+				readme := ""
+				readme, err = retrieveGitFile(c.GitURL, c.GitBranch, c.GitPath, "README.md")
+
+				// Try retrieving from root directory
+				if err != nil {
+					log.Debugf("Unable to retrieve README.md '%s' '%s'. Error: %s. Trying the root directory.", c.GitURL, c.GitBranch, err)
+					readme, err = retrieveGitFile(c.GitURL, c.GitBranch, "/", "README.md")
+					if err != nil {
+						log.Debugf("Unable to retrieve README.md from root '%s' '%s'. Error: %s.", c.GitURL, c.GitBranch, err)
+						log.Warnf("Unable to retrieve README.md for %s/%s", c.AppID, c.JobID)
 					}
 				}
+
+				b.Projects[i].Readme = readme
 
 			}(i, c)
 		}

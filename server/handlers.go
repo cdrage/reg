@@ -39,6 +39,7 @@ type Repository struct {
 	Tag                 string                    `json:"tag"`
 	Created             time.Time                 `json:"created"`
 	URI                 string                    `json:"uri"`
+	Tags                int                       `json:"tags"`
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
 
@@ -174,11 +175,23 @@ func (rc *registryController) repositories(staticDir string) error {
 
 	for _, repo := range repoList {
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-		r := Repository{
-			Name: repo,
-			URI:  repoURI,
+
+		// Retrieve number of tags
+		tags, err := rc.reg.Tags(repo)
+		if err != nil {
+			logrus.Warningf("Ignoring user %s, unable to retrieve tags: %v.", repo, err)
 		}
-		result.Repositories = append(result.Repositories, r)
+
+		// If there are actually tags, we add this to the main site, otherwise, we ignore it.
+		if len(tags) != 0 {
+			r := Repository{
+				Name: repo,
+				URI:  repoURI,
+				Tags: len(tags),
+			}
+			result.Repositories = append(result.Repositories, r)
+		}
+
 	}
 
 	// parse & execute the template
@@ -222,6 +235,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	repo := vars["username"] + "/" + vars["container"]
+	logrus.Debugf("Getting repo %s", repo)
 
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
@@ -231,6 +245,13 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 			"method": r.Method,
 		}).Errorf("getting tags for %s failed: %v", repo, err)
 
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
+	}
+
+	// Error out if there are no tags / images (the above err != nil does not error out when nothing has been found)
+	if len(tags) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "No tags found")
 		return

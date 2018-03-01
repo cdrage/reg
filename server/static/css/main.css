@@ -77,3 +77,18 @@ body {
 .markdown-body h1,h2,h3,h4,h5,h6 {
   text-align:left !important;
 }
+
+/*------------------------------------*\
+   Other
+\*------------------------------------*/
+  
+.pull-commands {
+  color: #343a40;
+  font-family: Inconsolata,monospace;
+  font-size: 50%;
+  text-align: center;
+}
+
+.tab-content {
+  width:100%;
+}
