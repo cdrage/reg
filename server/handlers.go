@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -49,6 +50,8 @@ type AnalysisResult struct {
 	RegistryDomain string       `json:"registryDomain"`
 	Name           string       `json:"name"`
 	LastUpdated    string       `json:"lastUpdated"`
+	Tags           []string     `json:"tags"`
+	Latest         string       `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
 
 	// Extra bits
 	Dockerfile string
@@ -334,7 +337,19 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 			Created: createdDate,
 		}
 
+		result.Tags = append(result.Tags, rp.Tag)
 		result.Repositories = append(result.Repositories, rp)
+	}
+
+	// Lets find out the "latest" image.
+	// if "latest" tag does not exist, use the highest version
+
+	if stringInSlice("latest", result.Tags) == true {
+		result.Latest = "latest"
+	} else {
+		logrus.Debugf("No 'latest' tag found for %s", result.Name)
+		sort.Sort(sort.Reverse(sort.StringSlice(result.Tags)))
+		result.Latest = result.Tags[0]
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "tags", result); err != nil {
@@ -431,4 +446,13 @@ func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *h
 		return
 	}
 	return
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
