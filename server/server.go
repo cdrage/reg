@@ -243,17 +243,22 @@ func main() {
 			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
 		*/
 
-		// Make sure we handle css,img and js
+		// Make sure we handle css, img and js without the container handler overriding anything
 		r.PathPrefix("/css/").Handler(http.StripPrefix("/", staticHandler))
 		r.Handle("/css/", staticHandler)
 		r.PathPrefix("/img/").Handler(http.StripPrefix("/", staticHandler))
 		r.Handle("/img/", staticHandler)
 		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
 		r.Handle("/js/", staticHandler)
+		r.PathPrefix("/containers/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/containers/", staticHandler)
 
 		// container handler
 		r.HandleFunc("/{username}/{container}", rc.tagsHandler)
 		r.HandleFunc("/{username}/{container}/", rc.tagsHandler)
+
+		r.HandleFunc("/{container}", rc.tagsHandler)
+		r.HandleFunc("/{container}/", rc.tagsHandler)
 
 		// All other files
 		r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))

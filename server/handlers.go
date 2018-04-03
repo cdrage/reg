@@ -231,13 +231,17 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 
 	// Change the path to username/container
-	if vars["username"] == "" || vars["container"] == "" {
+	if vars["username"] == "" && vars["container"] == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
 
 	repo := vars["username"] + "/" + vars["container"]
+	if vars["username"] == "" && vars["container"] != "" {
+		repo = vars["container"]
+	}
+
 	logrus.Debugf("Getting repo %s", repo)
 
 	tags, err := rc.reg.Tags(repo)
