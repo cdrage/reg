@@ -101,3 +101,6 @@ if (clear_button) {
       search('');
   });
 }
+
+// Load highlight on load..
+hljs.initHighlightingOnLoad();
