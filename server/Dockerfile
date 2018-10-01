@@ -7,8 +7,8 @@ RUN yum install -y go git
 
 RUN mkdir /src
 
-RUN go get -v github.com/cdrage/reg && \
-    cd $GOPATH/src/github.com/cdrage/reg/server && \
+RUN go get -v github.com/bamachrn/reg && \
+    cd $GOPATH/src/github.com/bamachrn/reg/server && \
     go build && \
     mv server /src/server
 

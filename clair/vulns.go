@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bamachrn/reg/registry"
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/cdrage/reg/registry"
 )
 
 // Vulnerabilities scans the given repo and tag
