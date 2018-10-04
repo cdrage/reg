@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cdrage/reg/clair"
-	"github.com/cdrage/reg/registry"
-	"github.com/cdrage/reg/utils"
+	"github.com/bamachrn/reg/clair"
+	"github.com/bamachrn/reg/registry"
+	"github.com/bamachrn/reg/utils"
 	"github.com/gorilla/mux"
 	wordwrap "github.com/mitchellh/go-wordwrap"
 	"github.com/sirupsen/logrus"

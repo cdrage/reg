@@ -16,8 +16,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/cdrage/reg/clair"
-	"github.com/cdrage/reg/registry"
+	"github.com/bamachrn/reg/clair"
+	"github.com/bamachrn/reg/registry"
 	"github.com/gorilla/mux"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/sirupsen/logrus"
