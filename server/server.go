@@ -264,7 +264,7 @@ func main() {
 
 		// All other files
 		//r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
-		r.HandleFunc("/", rc.landingPageHandler)
+		//r.HandleFunc("/", rc.landingPageHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			t, err := route.GetPathTemplate()
