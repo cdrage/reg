@@ -250,6 +250,8 @@ func main() {
 		r.Handle("/img/", staticHandler)
 		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
 		r.Handle("/js/", staticHandler)
+		r.PathPrefix("/using-registry/").Handler(http.StripPrefix("/using-registry/", staticHandler))
+		r.Handle("/using-registry/", staticHandler)
 		r.PathPrefix("/containers/").Handler(http.StripPrefix("/containers/", staticHandler))
 		r.Handle("/containers/", staticHandler)
 
