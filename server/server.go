@@ -263,8 +263,8 @@ func main() {
 		r.HandleFunc("/{container}/", rc.tagsHandler)
 
 		// All other files
-		//r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/", staticHandler)
+		r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
+		r.Handle("/", staticHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			t, err := route.GetPathTemplate()
