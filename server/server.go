@@ -262,8 +262,8 @@ func main() {
 		r.HandleFunc("/{container}", rc.tagsHandler)
 		r.HandleFunc("/{container}/", rc.tagsHandler)
 
-		// All other files
-		//r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
+		// Landing page to containers
+		r.PathPrefix("/").Handler(http.StripPrefix("/containers/", staticHandler))
 		//r.HandleFunc("/", rc.landingPageHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
