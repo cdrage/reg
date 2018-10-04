@@ -221,6 +221,14 @@ func (rc *registryController) repositories(staticDir string) error {
 	return nil
 }
 
+func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
+	logrus.WithFields(logrus.Fields{
+		"func":   "tags",
+		"URL":    r.URL,
+		"method": r.Method,
+	}).Info("Landing Page")
+}
+
 func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.WithFields(logrus.Fields{
 		"func":   "tags",

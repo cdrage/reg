@@ -245,15 +245,15 @@ func main() {
 
 		// Make sure we handle css, img and js without the container handler overriding anything
 		r.PathPrefix("/css/").Handler(http.StripPrefix("/", staticHandler))
-		r.Handle("/css/", staticHandler)
+		//r.Handle("/css/", staticHandler)
 		r.PathPrefix("/img/").Handler(http.StripPrefix("/", staticHandler))
-		r.Handle("/img/", staticHandler)
+		//r.Handle("/img/", staticHandler)
 		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
-		r.Handle("/js/", staticHandler)
-		r.PathPrefix("/using-registry/").Handler(http.StripPrefix("/using-registry/", staticHandler))
-		r.Handle("/using-registry/", staticHandler)
-		r.PathPrefix("/containers/").Handler(http.StripPrefix("/containers/", staticHandler))
-		r.Handle("/containers/", staticHandler)
+		//r.Handle("/js/", staticHandler)
+		r.PathPrefix("/using-registry/").Handler(http.StripPrefix("/", staticHandler))
+		//r.Handle("/using-registry/", staticHandler)
+		r.PathPrefix("/containers/").Handler(http.StripPrefix("/", staticHandler))
+		//r.Handle("/containers/", staticHandler)
 
 		// container handler
 		r.HandleFunc("/{username}/{container}", rc.tagsHandler)
@@ -263,8 +263,8 @@ func main() {
 		r.HandleFunc("/{container}/", rc.tagsHandler)
 
 		// All other files
-		r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
-		r.Handle("/", staticHandler)
+		//r.PathPrefix("/").Handler(http.StripPrefix("/", staticHandler))
+		r.HandleFunc("/", rc.landingPageHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			t, err := route.GetPathTemplate()
