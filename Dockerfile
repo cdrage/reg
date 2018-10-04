@@ -5,7 +5,7 @@ ENV GOPATH /go
 
 RUN yum install -y go
 
-RUN go get -v github.com/cdrage/reg
+RUN go get -v github.com/bamachrn/reg
 
 ENTRYPOINT ["reg-server"]
 CMD ["--help"]

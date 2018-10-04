@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/bamachrn/reg/testutils"
 	"github.com/docker/docker/client"
-	"github.com/cdrage/reg/testutils"
 )
 
 var (
