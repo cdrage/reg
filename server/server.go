@@ -250,9 +250,9 @@ func main() {
 		//r.Handle("/img/", staticHandler)
 		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
 		//r.Handle("/js/", staticHandler)
-		r.PathPrefix("/about/").Handler(http.StripPrefix("/", staticHandler))
+		r.PathPrefix("/about").Handler(http.StripPrefix("/", staticHandler))
 		//r.Handle("/about/", staticHandler)
-		r.PathPrefix("/containers/").Handler(http.StripPrefix("/", staticHandler))
+		r.PathPrefix("/containers").Handler(http.StripPrefix("/", staticHandler))
 		//r.Handle("/containers/", staticHandler)
 
 		// container handler
