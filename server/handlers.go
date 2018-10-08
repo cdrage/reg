@@ -227,6 +227,7 @@ func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.
 		"URL":    r.URL,
 		"method": r.Method,
 	}).Info("Landing Page")
+	http.Redirect(w, r, "/containers/", http.StatusSeeOther)
 }
 
 func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request) {

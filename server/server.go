@@ -263,8 +263,8 @@ func main() {
 		r.HandleFunc("/{container}/", rc.tagsHandler)
 
 		// Landing page to containers
-		r.PathPrefix("/").Handler(http.StripPrefix("/containers/", staticHandler))
-		//r.HandleFunc("/", rc.landingPageHandler)
+		//r.PathPrefix("/").Handler(http.StripPrefix("/containers/", staticHandler))
+		r.HandleFunc("/", rc.landingPageHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			t, err := route.GetPathTemplate()
