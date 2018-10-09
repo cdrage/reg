@@ -230,7 +230,7 @@ func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.
 	http.Redirect(w, r, "/containers/", http.StatusSeeOther)
 }
 
-func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request) {
+func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.WithFields(logrus.Fields{
 		"func":   "tags",
 		"URL":    r.URL,
@@ -365,7 +365,7 @@ func (rc *registryController) tagsHandler(w http.ResponseWriter, r *http.Request
 		result.Latest = result.Tags[0]
 	}
 
-	if err := tmpl.ExecuteTemplate(w, "tags", result); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "tagList", result); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
 			"URL":    r.URL,

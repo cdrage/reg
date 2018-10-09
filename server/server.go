@@ -260,11 +260,11 @@ func main() {
 		//r.Handle("/containers/", staticHandler)
 
 		// container handler
-		r.HandleFunc("/{username}/{container}", rc.tagsHandler)
-		r.HandleFunc("/{username}/{container}/", rc.tagsHandler)
+		r.HandleFunc("/{username}/{container}", rc.tagListHandler)
+		r.HandleFunc("/{username}/{container}/", rc.tagListHandler)
 
-		r.HandleFunc("/{container}", rc.tagsHandler)
-		r.HandleFunc("/{container}/", rc.tagsHandler)
+		r.HandleFunc("/{container}", rc.tagListHandler)
+		r.HandleFunc("/{container}/", rc.tagListHandler)
 
 		// Landing page to containers
 		//r.PathPrefix("/").Handler(http.StripPrefix("/containers/", staticHandler))
