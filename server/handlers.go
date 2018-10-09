@@ -54,8 +54,10 @@ type AnalysisResult struct {
 	Latest         string       `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
 
 	// Extra bits
-	Dockerfile string
-	Readme     template.HTML
+	Dockerfile  string
+	Readme      template.HTML
+	SourceRepo  string
+	BuildStatus string
 }
 
 // Download Dockerfiles to the server
@@ -232,10 +234,10 @@ func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.
 
 func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.WithFields(logrus.Fields{
-		"func":   "tags",
+		"func":   "tagList",
 		"URL":    r.URL,
 		"method": r.Method,
-	}).Info("fetching tags")
+	}).Info("fetching list of tags")
 
 	vars := mux.Vars(r)
 
@@ -280,10 +282,11 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		logrus.Fatal(err)
 	}
+	logrus.Info("current working dir: %s", wd)
 
 	//TODO: fix these temporary values after API is working
-	SourceRepo = dockerfileDir
-	BuildStatus = "success"
+	gitrepourl := dockerfileDir
+	latestbuildstatus := "success"
 
 	// TODO retrieve the namespace.yaml file
 
@@ -293,8 +296,8 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
-		BuildStatus:    BuildStatus,
-		SourceRepo:     SourceRepo,
+		BuildStatus:    latestbuildstatus,
+		SourceRepo:     gitrepourl,
 	}
 
 	for _, tag := range tags {
