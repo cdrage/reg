@@ -281,6 +281,134 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		logrus.Fatal(err)
 	}
 
+	//TODO: fix these temporary values after API is working
+	SourceRepo = dockerfileDir
+	BuildStatus = "success"
+
+	// TODO retrieve the namespace.yaml file
+
+	// Sanitize and convert markdown outputa
+
+	result := AnalysisResult{
+		RegistryDomain: rc.reg.Domain,
+		LastUpdated:    time.Now().Local().Format(time.RFC1123),
+		Name:           repo,
+		BuildStatus:    BuildStatus,
+		SourceRepo:     SourceRepo,
+	}
+
+	for _, tag := range tags {
+		// get the manifest
+		m1, err := rc.reg.ManifestV1(repo, tag)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"func":   "tags",
+				"URL":    r.URL,
+				"method": r.Method,
+				"repo":   repo,
+				"tag":    tag,
+			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Manifest not found")
+			return
+		}
+
+		var createdDate time.Time
+		for _, h := range m1.History {
+			var comp v1Compatibility
+
+			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+				logrus.WithFields(logrus.Fields{
+					"func":   "tags",
+					"URL":    r.URL,
+					"method": r.Method,
+				}).Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			createdDate = comp.Created
+			break
+		}
+
+		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
+		if tag != "latest" {
+			repoURI += ":" + tag
+		}
+		rp := Repository{
+			Name:    repo,
+			Tag:     tag,
+			URI:     repoURI,
+			Created: createdDate,
+		}
+
+		result.Tags = append(result.Tags, rp.Tag)
+		result.Repositories = append(result.Repositories, rp)
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "tagList", result); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"func":   "tags",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("template rendering failed: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	return
+}
+
+func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	logrus.WithFields(logrus.Fields{
+		"func":   "tags",
+		"URL":    r.URL,
+		"method": r.Method,
+	}).Info("fetching tags")
+
+	vars := mux.Vars(r)
+
+	// Change the path to username/container
+	if vars["username"] == "" && vars["container"] == "" {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Empty repo")
+		return
+	}
+
+	repo := vars["username"] + "/" + vars["container"]
+	if vars["username"] == "" && vars["container"] != "" {
+		repo = vars["container"]
+	}
+
+	logrus.Debugf("Getting repo %s", repo)
+
+	tags, err := rc.reg.Tags(repo)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"func":   "tags",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("getting tags for %s failed: %v", repo, err)
+
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
+	}
+
+	// Error out if there are no tags / images (the above err != nil does not error out when nothing has been found)
+	if len(tags) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
+	}
+
+	// Let's get the (saved) Dockerfile
+
+	// Get the current executable directory
+	wd, err := os.Getwd()
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
 	// Retrieve Dockerfile
 	dockerfile, err := ioutil.ReadFile(filepath.Join(wd, dockerfileDir, repo, "Dockerfile"))
 	if err != nil {
