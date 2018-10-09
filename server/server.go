@@ -151,7 +151,7 @@ func main() {
 			logrus.Fatalf("Template %s not found", tagList)
 		}
 		tagDetails := filepath.Join(templateDir, "tag-details.html")
-		if _, err := os.Stat(tag - details); os.IsNotExist(err) {
+		if _, err := os.Stat(tagDetails); os.IsNotExist(err) {
 			logrus.Fatalf("Template %s not found", tagDetails)
 		}
 
