@@ -142,13 +142,17 @@ func main() {
 		if _, err := os.Stat(vulns); os.IsNotExist(err) {
 			logrus.Fatalf("Template %s not found", vulns)
 		}
-		layout := filepath.Join(templateDir, "containers.html")
-		if _, err := os.Stat(layout); os.IsNotExist(err) {
-			logrus.Fatalf("Template %s not found", layout)
+		imageList := filepath.Join(templateDir, "image-list.html")
+		if _, err := os.Stat(imageList); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", imageList)
 		}
-		tags := filepath.Join(templateDir, "tags.html")
-		if _, err := os.Stat(tags); os.IsNotExist(err) {
-			logrus.Fatalf("Template %s not found", tags)
+		tagList := filepath.Join(templateDir, "tag-list.html")
+		if _, err := os.Stat(tagList); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", tagList)
+		}
+		tagDetails := filepath.Join(templateDir, "tag-details.html")
+		if _, err := os.Stat(tag - details); os.IsNotExist(err) {
+			logrus.Fatalf("Template %s not found", tagDetails)
 		}
 
 		funcMap := template.FuncMap{
