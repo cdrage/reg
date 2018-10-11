@@ -36,11 +36,12 @@ type v1Compatibility struct {
 
 // A Repository holds data after a vulnerability scan of a single repo
 type Repository struct {
-	Name                string                    `json:"name"`
-	Tag                 string                    `json:"tag"`
-	Created             time.Time                 `json:"created"`
-	URI                 string                    `json:"uri"`
-	Tags                int                       `json:"tags"`
+	Name                string    `json:"name"`
+	Tag                 string    `json:"tag"`
+	Created             time.Time `json:"created"`
+	URI                 string    `json:"uri"`
+	Tags                int       `json:"tags"`
+	BuildStatus         string
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
 }
 
@@ -54,10 +55,9 @@ type AnalysisResult struct {
 	Latest         string       `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
 
 	// Extra bits
-	Dockerfile  string
-	Readme      template.HTML
-	SourceRepo  string
-	BuildStatus string
+	Dockerfile string
+	Readme     template.HTML
+	SourceRepo string
 }
 
 // Download Dockerfiles to the server
@@ -286,7 +286,6 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 
 	//TODO: fix these temporary values after API is working
 	gitrepourl := dockerfileDir
-	latestbuildstatus := "success"
 
 	// TODO retrieve the namespace.yaml file
 
@@ -296,7 +295,6 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
-		BuildStatus:    latestbuildstatus,
 		SourceRepo:     gitrepourl,
 	}
 
@@ -333,16 +331,19 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 			createdDate = comp.Created
 			break
 		}
+		//TODO: Get the actual build status from the API
+		latestbuildstatus := "success"
 
 		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
 		if tag != "latest" {
 			repoURI += ":" + tag
 		}
 		rp := Repository{
-			Name:    repo,
-			Tag:     tag,
-			URI:     repoURI,
-			Created: createdDate,
+			Name:        repo,
+			Tag:         tag,
+			BuildStatus: latestbuildstatus,
+			URI:         repoURI,
+			Created:     createdDate,
 		}
 
 		result.Tags = append(result.Tags, rp.Tag)
