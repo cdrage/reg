@@ -43,16 +43,48 @@ type Repository struct {
 	Tags                int       `json:"tags"`
 	BuildStatus         string
 	VulnerabilityReport clair.VulnerabilityReport `json:"vulnerability"`
+	AppID               string
+	JobID               string
 }
 
 // A AnalysisResult holds all vulnerabilities of a scan
-type AnalysisResult struct {
+type TagList struct {
 	Repositories   []Repository `json:"repositories"`
 	RegistryDomain string       `json:"registryDomain"`
-	Name           string       `json:"name"`
-	LastUpdated    string       `json:"lastUpdated"`
 	Tags           []string     `json:"tags"`
 	Latest         string       `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
+	AppID          string
+	JobID          string
+}
+
+type ScanLogsGroup struct {
+	RPMUpdate    string
+	RPMVerify    string
+	ContainerCap string
+	MiscUpdate   string
+}
+
+//All the logs for builds
+type BuildLogsGroup struct {
+	BuildNumber int
+	PreBuildLog string
+	LintLog     string
+	BuildLog    string
+	ScanLog     []ScanLogsGroup
+	DeliveryLog string
+	NotifyLog   string
+}
+
+type TagDetails struct {
+	BuildLogs      []BuildLogsGroup
+	WScanLogs      []ScanLogsGroup
+	RegistryDomain string `json:"registryDomain"`
+	Name           string `json:"name"`
+	LastUpdated    string `json:"lastUpdated"`
+	Tag            string `json:"tags"`
+	IsLibrary      bool
+	AppID          string
+	JobID          string
 
 	// Extra bits
 	Dockerfile string
