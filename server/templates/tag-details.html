@@ -29,7 +29,7 @@
           <a class="nav-link active" id="build-logs-tab" data-toggle="pill" href="#build-logs" role="tab" aria-controls="build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" id="weekly-scan-logs-tab" data-toggle="pill" href="#weekly-scan-logs" role="tab" aria-controls="weekly-scan-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+          <a class="nav-link" id="weekly-scan-logs-tab" data-toggle="pill" href="#weekly-scan-logs" role="tab" aria-controls="weekly-scan-logs" aria-selected="true" style="padding-left:0;">Weekly Scan Logs</a>
         </li>
 
         {{ if ne .Dockerfile "" }}
@@ -42,33 +42,48 @@
           <a class="nav-link" id="description-tab" data-toggle="pill" href="#description" role="tab" aria-controls="description" aria-selected="false">Description</a>
         </li>
         {{ end }}
+        <li class="nav-item">
+          <a class="nav-link" id="source-repo-tab" data-toggle="pill" href="#source-repo" role="tab" aria-controls="source-repo" aria-selected="true" style="padding-left:0;">Source Repo</a>
+        </li>
       </ul>
 
       <div class="tab-content" id="pills-tabContent">
 
         <div class="tab-pane fade show active" id="build-logs" role="tabpanel" aria-labelledby="build-logs-tab">
-            <table>
-                <tr>
-                    <th>Name</th>
-                    <th>Tag</th>
-                    <th>Created</th>
-                </tr>
-                {{ range $key, $value := .Repositories }}
-                <tr>
-                    <td valign="left" nowrap>
-                        {{ $value.Name }}
-                    </td>
-                    <td align="right" nowrap>
-                        {{ $value.Tag }}
-                    </td>
-                    <td align="right" nowrap>
-                        {{ $value.Created.Format "02 Jan, 2006 15:04:05 UTC" }}
-                    </td>
-                </tr>
-                {{ end }}
-            </table>
+
+           <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+             <li class="nav-item">
+               <a class="nav-link active" id="bl-pre-build-tab" data-toggle="pill" href="#bl-pre-build" role="tab" aria-controls="bl-pre-build" aria-selected="true" style="padding-left:0;">Pre-build Logs</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="bl-linter-logs" data-toggle="pill" href="#bl-linter-logs" role="tab" aria-controls="bl-linter-logs" aria-selected="true" style="padding-left:0;">Targetfile Linting Logs</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="bl-build-logs" data-toggle="pill" href="#bl-build-logs" role="tab" aria-controls="bl-build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="bl-scan-logs" data-toggle="pill" href="#bl-scan-logs" role="tab" aria-controls="bl-scan-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+             </li>
+           <ul>
         </div>
 
+        <div class="tab-pane fade show active" id="weekly-scan-logs" role="tabpanel" aria-labelledby="weekly-scan-logs-tab">
+
+           <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+             <li class="nav-item">
+               <a class="nav-link active" id="ws-rpm-update-tab" data-toggle="pill" href="#ws-rpm-update" role="tab" aria-controls="ws-rpm-update" aria-selected="true" style="padding-left:0;">RPM Update Scan</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="ws-rpm-verify-tab" data-toggle="pill" href="#ws-rpm-verify" role="tab" aria-controls="ws-rpm-verify" aria-selected="true" style="padding-left:0;">RPM Verify Scan</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="ws-container-cap" data-toggle="pill" href="#ws-container-cap" role="tab" aria-controls="ws-container-cap" aria-selected="true" style="padding-left:0;">Container Capability</a>
+             </li>
+             <li class="nav-item">
+               <a class="nav-link" id="ws-misc-update" data-toggle="pill" href="#ws-misc-update" role="tab" aria-controls="ws-misc-update" aria-selected="true" style="padding-left:0;">Miscellaneous Update</a>
+             </li>
+           <ul>
+        </div>
         {{ if ne .Dockerfile "" }}
           <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">
             <pre class="highlight-code"><code class="dockerfile">{{ .Dockerfile }}</code></pre>
