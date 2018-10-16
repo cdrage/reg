@@ -249,15 +249,10 @@ func main() {
 
 		// Make sure we handle css, img and js without the container handler overriding anything
 		r.PathPrefix("/css/").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/css/", staticHandler)
 		r.PathPrefix("/img/").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/img/", staticHandler)
 		r.PathPrefix("/js/").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/js/", staticHandler)
 		r.PathPrefix("/about").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/about/", staticHandler)
 		r.PathPrefix("/containers").Handler(http.StripPrefix("/", staticHandler))
-		//r.Handle("/containers/", staticHandler)
 
 		// container handler
 		r.HandleFunc("/{username}/{container}", rc.tagListHandler)
@@ -266,8 +261,11 @@ func main() {
 		r.HandleFunc("/{container}", rc.tagListHandler)
 		r.HandleFunc("/{container}/", rc.tagListHandler)
 
+		// container handler
+		r.HandleFunc("/{username}/{container}/{desired-tag}", rc.tagDetailsHandler)
+		r.HandleFunc("/{username}/{container}/{desired-tag}/", rc.tagDetailsHandler)
+
 		// Landing page to containers
-		//r.PathPrefix("/").Handler(http.StripPrefix("/containers/", staticHandler))
 		r.HandleFunc("/", rc.landingPageHandler)
 
 		r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
