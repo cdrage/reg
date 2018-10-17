@@ -255,15 +255,15 @@ func main() {
 		r.PathPrefix("/containers").Handler(http.StripPrefix("/", staticHandler))
 
 		// container handler
-		r.HandleFunc("/{username}/{container}", rc.tagListHandler)
-		r.HandleFunc("/{username}/{container}/", rc.tagListHandler)
+		r.HandleFunc("/{appid}/{jobid}", rc.tagListHandler)
+		r.HandleFunc("/{appid}/{jobid}/", rc.tagListHandler)
 
-		r.HandleFunc("/{container}", rc.tagListHandler)
-		r.HandleFunc("/{container}/", rc.tagListHandler)
+		r.HandleFunc("/{jobid}", rc.tagListHandler)
+		r.HandleFunc("/{jobid}/", rc.tagListHandler)
 
 		// container handler
-		r.HandleFunc("/{username}/{container}/{desired-tag}", rc.tagDetailsHandler)
-		r.HandleFunc("/{username}/{container}/{desired-tag}/", rc.tagDetailsHandler)
+		r.HandleFunc("/{appid}/{jobid}/{desiredtag}", rc.tagDetailsHandler)
+		r.HandleFunc("/{appid}/{jobid}/{desiredtag}/", rc.tagDetailsHandler)
 
 		// Landing page to containers
 		r.HandleFunc("/", rc.landingPageHandler)
