@@ -92,167 +92,30 @@ type TagDetails struct {
 	SourceRepo string
 }
 
-// Download Dockerfiles to the server
-// Puts it into a specific directory.
+var (
+	//Namespace for the openshift projects
+	APIURL    = "registryApi.serverAddress"
+	NAMESPACE = "pipeline"
+)
 
-func (rc *registryController) dockerfiles(dockerfilesDir string) error {
-
-	// Retrieve the catalog
-	logrus.Info("fetching catalog for dockerfile retrieval")
-
-	result := AnalysisResult{
-		RegistryDomain: rc.reg.Domain,
-		LastUpdated:    time.Now().Local().Format(time.RFC1123),
-	}
-
-	repoList, err := r.Catalog("")
+func getDetailsFromAPI(url string) {
+	var data map[string]string
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("getting catalog failed: %v", err)
+		logrus.WithFields(logrus.Fields{
+			"func":   "tags",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Errorf("getting details for %s failed: %v", url, err)
+
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
 	}
+	defer resp.Body.Close()
+	err := json.NewDecoder(resp.Body).Decode(&data)
 
-	for _, repo := range repoList {
-		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-		r := Repository{
-			Name: repo,
-			URI:  repoURI,
-		}
-		result.Repositories = append(result.Repositories, r)
-	}
-
-	// Retrieve all Dockerfiles :)
-	logrus.Info("retrieving Dockerfiles (http get)")
-
-	// TODO: Instead of grabbing the *first* id in the cccp.yaml file, possible *show* Dockerfile from each tag instead in the HTML?
-	repos, err := retrieveIndex()
-	if err != nil {
-		return fmt.Errorf("getting dockerfiles from index failed: %v", err)
-	}
-
-	for _, repo := range repos {
-
-		// TODO: A bit "hacky" but this will do for now.
-		namespace := repo.Projects[0].AppID
-
-		for _, c := range repo.Projects {
-
-			// TODO: A bit "hacky" but this will do for now.
-			container := c.JobID
-			dockerfileContents := c.Dockerfile
-			readme := c.Readme
-
-			dockerfilePath := path.Join(dockerfilesDir, namespace, container)
-
-			// Create the folder if it's not already there
-			logrus.Debugf("creating dir %s", dockerfilePath)
-			err = os.MkdirAll(dockerfilePath, os.ModePerm)
-			if err != nil {
-				return err
-			}
-
-			// Create / open the file
-			logrus.Debugf("creating/opening file %s", path.Join(dockerfilePath, "Dockerfile"))
-			f, err := os.Create(path.Join(dockerfilePath, "Dockerfile"))
-			defer f.Close()
-			if err != nil {
-				return err
-			}
-
-			// Write Dockerfile contents to file if Dockerfile != ""
-			if dockerfileContents != "" {
-				_, err = io.Copy(f, strings.NewReader(dockerfileContents))
-				if err != nil {
-					return errors.Wrap(err, "Unable to write to Dockerfile")
-				}
-			}
-
-			// Create / open the file
-			logrus.Debugf("creating/opening file %s", path.Join(dockerfilePath, "README.md"))
-			readmeContents, err := os.Create(path.Join(dockerfilePath, "README.md"))
-			defer readmeContents.Close()
-			if err != nil {
-				return err
-			}
-
-			// Write README contents to file if Readme != ""
-			if readme != "" {
-				// Convert the readme to valid (safe) HTML
-				unsafe := blackfriday.Run([]byte(readme))
-				html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-
-				_, err = io.Copy(readmeContents, strings.NewReader(string(html)))
-				if err != nil {
-					return errors.Wrap(err, "Unable to write to Readme")
-				}
-			}
-
-			if err != nil {
-				return err
-			}
-
-		}
-	}
-
-	return nil
-}
-
-func (rc *registryController) repositories(staticDir string) error {
-
-	updating = true
-	logrus.Info("fetching catalog")
-
-	result := AnalysisResult{
-		RegistryDomain: rc.reg.Domain,
-		LastUpdated:    time.Now().Local().Format(time.RFC1123),
-	}
-
-	repoList, err := r.Catalog("")
-	if err != nil {
-		return fmt.Errorf("getting catalog failed: %v", err)
-	}
-
-	for _, repo := range repoList {
-		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-
-		// Retrieve number of tags
-		tags, err := rc.reg.Tags(repo)
-		if err != nil {
-			logrus.Warningf("Ignoring user %s, unable to retrieve tags: %v.", repo, err)
-		}
-
-		// If there are actually tags, we add this to the main site, otherwise, we ignore it.
-		if len(tags) != 0 {
-			r := Repository{
-				Name: repo,
-				URI:  repoURI,
-				Tags: len(tags),
-			}
-			result.Repositories = append(result.Repositories, r)
-		}
-
-	}
-
-	// parse & execute the template
-	logrus.Info("executing the template containers")
-
-	// Use /repo/index.html instead
-	path := filepath.Join(staticDir, "/containers/index.html")
-	if err := os.MkdirAll(filepath.Dir(path), 0644); err != nil {
-		return err
-	}
-	logrus.Debugf("creating/opening file %s", path)
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := tmpl.ExecuteTemplate(f, "containers", result); err != nil {
-		f.Close()
-		return fmt.Errorf("execute template containers failed: %v", err)
-	}
-
-	updating = false
-	return nil
+	return data, err
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -274,63 +137,36 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 	vars := mux.Vars(r)
 
 	// Change the path to username/container
-	if vars["username"] == "" && vars["container"] == "" {
+	if vars["appid"] == "" && vars["jobid"] == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
 
-	repo := vars["username"] + "/" + vars["container"]
-	if vars["username"] == "" && vars["container"] != "" {
-		repo = vars["container"]
+	//If it is a library image we will have the appid blank
+	if vars["appid"] == "" && vars["jobid"] != "" {
+		vars["appid"] = "library"
 	}
+	repo := vars["appid"] + "/" + vars["jobid"]
 
-	logrus.Debugf("Getting repo %s", repo)
+	logrus.Debugf("Getting repo tag details %s", repo)
 
-	tags, err := rc.reg.Tags(repo)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"func":   "tags",
-			"URL":    r.URL,
-			"method": r.Method,
-		}).Errorf("getting tags for %s failed: %v", repo, err)
-
+	data, err := getDetailsFromAPI(APIURL + "/" + NAMESPACE + "/" + repo + "/desired-tags")
+	if err != nil || len(data.tags) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "No tags found")
 		return
 	}
 
-	// Error out if there are no tags / images (the above err != nil does not error out when nothing has been found)
-	if len(tags) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "No tags found")
-		return
-	}
+	// Sanitize and convert markdown output
 
-	// Let's get the (saved) Dockerfile
-
-	// Get the current executable directory
-	wd, err := os.Getwd()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	logrus.Info("current working dir: %s", wd)
-
-	//TODO: fix these temporary values after API is working
-	gitrepourl := dockerfileDir
-
-	// TODO retrieve the namespace.yaml file
-
-	// Sanitize and convert markdown outputa
-
-	result := AnalysisResult{
+	result := TagList{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
-		SourceRepo:     gitrepourl,
 	}
 
-	for _, tag := range tags {
+	for _, tag := range data.tags {
 		// get the manifest
 		m1, err := rc.reg.ManifestV1(repo, tag)
 		if err != nil {
@@ -396,7 +232,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 
 func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.WithFields(logrus.Fields{
-		"func":   "tags",
+		"func":   "tagDetails",
 		"URL":    r.URL,
 		"method": r.Method,
 	}).Info("fetching tags")
@@ -404,15 +240,15 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	vars := mux.Vars(r)
 
 	// Change the path to username/container
-	if vars["username"] == "" && vars["container"] == "" {
+	if vars["username"] == "" && vars["container"] == "" && vars["tag"] {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
 
-	repo := vars["username"] + "/" + vars["container"]
-	if vars["username"] == "" && vars["container"] != "" {
-		repo = vars["container"]
+	repo := vars["username"] + "/" + vars["container"] + "/" + vars["tag"]
+	if vars["username"] == "" && vars["container"] == "" && vars["tag"] != "" {
+		repo = vars["container"] + "/" + vars["tag"]
 	}
 
 	logrus.Debugf("Getting repo %s", repo)
@@ -420,7 +256,7 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	tags, err := rc.reg.Tags(repo)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			"func":   "tags",
+			"func":   "tagDetails",
 			"URL":    r.URL,
 			"method": r.Method,
 		}).Errorf("getting tags for %s failed: %v", repo, err)
