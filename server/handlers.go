@@ -76,18 +76,19 @@ type BuildLogsGroup struct {
 }
 
 type TagDetails struct {
-	BuildLogs      []BuildLogsGroup
-	WScanLogs      []ScanLogsGroup
-	RegistryDomain string `json:"registryDomain"`
-	Name           string `json:"name"`
-	LastUpdated    string `json:"lastUpdated"`
-	Tag            string `json:"tags"`
-	IsLibrary      bool
-	AppID          string
-	JobID          string
+	BuildLogs         []BuildLogsGroup
+	WScanLogs         []ScanLogsGroup
+	RegistryDomain    string `json:"registryDomain"`
+	Name              string `json:"name"`
+	LastUpdated       string `json:"lastUpdated"`
+	Tag               string `json:"tags"`
+	IsLibrary         bool
+	AppID             string
+	JobID             string
+	PreBuildRequested bool
 
 	// Extra bits
-	Dockerfile string
+	TargetFile string
 	Readme     template.HTML
 	SourceRepo string
 }
@@ -98,9 +99,9 @@ var (
 	NAMESPACE = "pipeline"
 )
 
-func getDetailsFromAPI(url string) {
+func getDetailsFromAPI(uri string) {
 	var data map[string]string
-	resp, err := http.Get(url)
+	resp, err := http.Get(APIURL + "/v1/" + NAMESPACE + "/" + uri)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
@@ -149,9 +150,9 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 	}
 	repo := vars["appid"] + "/" + vars["jobid"]
 
-	logrus.Debugf("Getting repo tag details %s", repo)
+	logrus.Debugf("Getting repo tag list %s", repo)
 
-	data, err := getDetailsFromAPI(APIURL + "/" + NAMESPACE + "/" + repo + "/desired-tags")
+	data, err := getDetailsFromAPI(repo + "/desired-tags")
 	if err != nil || len(data.tags) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "No tags found")
@@ -167,38 +168,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	for _, tag := range data.tags {
-		// get the manifest
-		m1, err := rc.reg.ManifestV1(repo, tag)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
-				"URL":    r.URL,
-				"method": r.Method,
-				"repo":   repo,
-				"tag":    tag,
-			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Manifest not found")
-			return
-		}
 
-		var createdDate time.Time
-		for _, h := range m1.History {
-			var comp v1Compatibility
-
-			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"func":   "tags",
-					"URL":    r.URL,
-					"method": r.Method,
-				}).Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			createdDate = comp.Created
-			break
-		}
 		//TODO: Get the actual build status from the API
 		latestbuildstatus := "success"
 
@@ -240,129 +210,70 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	vars := mux.Vars(r)
 
 	// Change the path to username/container
-	if vars["username"] == "" && vars["container"] == "" && vars["tag"] {
+	if vars["appid"] == "" && vars["jobid"] == "" && vars["desiredtag"] {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
-
-	repo := vars["username"] + "/" + vars["container"] + "/" + vars["tag"]
-	if vars["username"] == "" && vars["container"] == "" && vars["tag"] != "" {
-		repo = vars["container"] + "/" + vars["tag"]
+	//For library images appid would be blank
+	if vars["appid"] == "" && vars["jobid"] != "" && vars["desiredtag"] != "" {
+		vars["appid"] = "library"
 	}
+
+	repo := vars["appid"] + "/" + vars["jobid"] + "/" + vars["desiredtag"]
 
 	logrus.Debugf("Getting repo %s", repo)
 
-	tags, err := rc.reg.Tags(repo)
+	targetfileDetails, err := getDetailsFromAPI(repo + "/target-file")
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"func":   "tagDetails",
-			"URL":    r.URL,
-			"method": r.Method,
-		}).Errorf("getting tags for %s failed: %v", repo, err)
-
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "No tags found")
+		fmt.Fprint(w, "Target file details not found")
+		return
+	}
+	prebuildRequested := targetfileDetails.prebuild
+	targetfileLink := targetfileDetails.target - file - link
+
+	metadata, err := getDetailsFromAPI(repo + "/metadata")
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Target file details not found")
 		return
 	}
 
-	// Error out if there are no tags / images (the above err != nil does not error out when nothing has been found)
-	if len(tags) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "No tags found")
-		return
+	//Fix the git url without .git
+	gitURL := metadata.git - url
+	if strings.HasSuffix(gitURL, ".git") {
+		gitURL := strings.TrimRight(gitURL, ".git")
 	}
 
-	// Let's get the (saved) Dockerfile
+	sourceRepo := gitURL + "/tree/" + metadata.git - branch
+	readmeLink := gitURL + "/" + metadata.git - branch + "/README.md"
 
-	// Get the current executable directory
-	wd, err := os.Getwd()
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	//TODO: retrieve Readme and targetfile content
+	targetfile := retrieveContent(targetfileLink)
+	readme := retrieveContent(readmeLink)
 
-	// Retrieve Dockerfile
-	dockerfile, err := ioutil.ReadFile(filepath.Join(wd, dockerfileDir, repo, "Dockerfile"))
-	if err != nil {
-		logrus.Warningf("Unable to retrieve Dockerfile from directory:", err)
-	}
-
-	// Retrieve README.md
-	readme, err := ioutil.ReadFile(filepath.Join(wd, dockerfileDir, repo, "README.md"))
-	if err != nil {
-		logrus.Warningf("Unable to retrieve README.md from directory:", err)
-	}
-
-	// TODO retrieve the namespace.yaml file
-
-	// Sanitize and convert markdown outputa
-
-	result := AnalysisResult{
+	result := TagDetails{
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC1123),
 		Name:           repo,
-		Dockerfile:     string(dockerfile),
+		TargetFile:     string(targetfile),
 		Readme:         template.HTML(readme),
 	}
 
-	for _, tag := range tags {
-		// get the manifest
-		m1, err := rc.reg.ManifestV1(repo, tag)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
-				"URL":    r.URL,
-				"method": r.Method,
-				"repo":   repo,
-				"tag":    tag,
-			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Manifest not found")
-			return
-		}
-
-		var createdDate time.Time
-		for _, h := range m1.History {
-			var comp v1Compatibility
-
-			if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"func":   "tags",
-					"URL":    r.URL,
-					"method": r.Method,
-				}).Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			createdDate = comp.Created
-			break
-		}
-
-		repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-		if tag != "latest" {
-			repoURI += ":" + tag
-		}
-		rp := Repository{
-			Name:    repo,
-			Tag:     tag,
-			URI:     repoURI,
-			Created: createdDate,
-		}
-
-		result.Tags = append(result.Tags, rp.Tag)
-		result.Repositories = append(result.Repositories, rp)
+	buildList, err := getDetailsFromAPI(repo + "/builds")
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No builds found for %s", repo)
+		return
 	}
+	latestBuildNum := len(buildList.builds) + 1
 
-	// Lets find out the "latest" image.
-	// if "latest" tag does not exist, use the highest version
-
-	if stringInSlice("latest", result.Tags) == true {
-		result.Latest = "latest"
-	} else {
-		logrus.Debugf("No 'latest' tag found for %s", result.Name)
-		sort.Sort(sort.Reverse(sort.StringSlice(result.Tags)))
-		result.Latest = result.Tags[0]
+	latestBuildLogs, err := getDetailsFromAPI(repo + "/" + LatestBuildNum + "/build-logs")
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Target file details not found")
+		return
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "tagList", result); err != nil {
