@@ -29,7 +29,7 @@
                 <th>Repository Name</th>
                 <th>Image Name</th>
             </tr>
-            {{ range $key, $value := .Repositories }}
+            {{ range $key, $value := .Projects }}
             <tr>
                 <td valign="top">
                     <a href="/{{ $value.Name }}/">
