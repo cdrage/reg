@@ -1,4 +1,4 @@
-FROM centos/golang:latest
+FROM registry.centos.org/centos/golang:latest
 
 #ENV PATH /go/bin:/usr/local/go/bin:$PATH
 #ENV GOPATH /go
