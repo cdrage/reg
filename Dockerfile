@@ -1,7 +1,7 @@
 FROM registry.centos.org/centos/golang:latest
 
-#ENV PATH /go/bin:/usr/local/go/bin:$PATH
-#ENV GOPATH /go
+ENV PATH /go/bin:/usr/local/go/bin:/opt/rh/go-toolset-7/root/usr/bin:/opt/rh/go-toolset-7/root/usr/sbin:/usr/local/sbin:$PATH
+ENV GOPATH /go:/go:/opt/rh/go-toolset-7/root/usr/share/gocode:/opt/rh/go-toolset-7/root/usr/share/gocode:$GOPATH
 
 RUN mkdir /src
 
@@ -11,8 +11,8 @@ RUN cd /go/src/reg/server && \
     go build && \
     mv server /src/server
 
-COPY reg/static /src/static
-COPY reg/templates /src/templates
+COPY server/static /src/static
+COPY server/templates /src/templates
 
 WORKDIR /src
 
