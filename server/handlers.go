@@ -277,7 +277,7 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 	for _, project := range apiProjects.Projects {
 		var project_detail Project
 		project_detail.Name = project.AppID + "/" + project.JobID
-		project_detail.URI = project_detail.Name
+		project_detail.URI = imageList.RegistryDomain + "/" + project_detail.Name
 		imageList.Projects = append(imageList.Projects, project_detail)
 	}
 
