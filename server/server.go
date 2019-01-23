@@ -27,10 +27,12 @@ const (
 )
 
 var (
-	updating = false
-	r        *registry.Registry
-	cl       *clair.Clair
-	tmpl     *template.Template
+	updating  = false
+	r         *registry.Registry
+	cl        *clair.Clair
+	tmpl      *template.Template
+	APIURL    = "registryApi.serverAddress"
+	NAMESPACE = "pipeline"
 )
 
 // preload initializes any global options and configuration
@@ -193,6 +195,7 @@ func main() {
 			cl:  cl,
 		}
 
+		APIURL = c.GlobalString("apiserver")
 		/*
 			// create the initial index
 			logrus.Info("creating initial index")

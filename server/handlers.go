@@ -110,12 +110,6 @@ type TagDetails struct {
 	SourceRepo string
 }
 
-var (
-	//Namespace for the openshift projects
-	APIURL    = "registryApi.serverAddress"
-	NAMESPACE = "pipeline"
-)
-
 func getAPIData(uri string, datatype string) (interface{}, error) {
 	url := APIURL + "/v1/namespaces/pipeline/" + uri
 
