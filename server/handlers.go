@@ -51,7 +51,7 @@ type Project struct {
 //An ImageList holds list of images avaialable
 type ImageList struct {
 	RegistryDomain string
-	LastUpdated    time.Time
+	LastUpdated    string
 	Meta           Meta      `json:"meta"`
 	Projects       []Project `json:"projects" mapstructure:"projects"`
 }
@@ -271,7 +271,7 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 
 	imageList := ImageList{
 		RegistryDomain: rc.reg.Domain,
-		LastUpdated:    time.Now().Format(RFC822),
+		LastUpdated:    time.Now().Local().Format(time.RFC822),
 	}
 
 	for _, project := range apiProjects.Projects {
