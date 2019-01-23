@@ -10,15 +10,15 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/bamachrn/reg/clair"
-	"github.com/bamachrn/reg/registry"
-	"github.com/bamachrn/reg/utils"
-	"github.com/bamachrn/reg/version"
 	"github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"reg/clair"
+	"reg/registry"
+	"reg/utils"
+	"reg/version"
 )
 
 const (
