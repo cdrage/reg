@@ -196,47 +196,7 @@ func main() {
 		}
 
 		APIURL = c.GlobalString("apiserver")
-		/*
-			// create the initial index
-			logrus.Info("creating initial index")
-			if err := rc.listImages(staticDir, c.GlobalString("apiserver")); err != nil {
-				logrus.Fatalf("Error creating index: %v", err)
-			}
 
-			// retrieve all the dockerfiles
-				logrus.Info("retrieving dockerfiles")
-				if err := rc.dockerfiles(dockerfilesDir); err != nil {
-					logrus.Fatalf("Error retrieving initial dockerfiles: %v", err)
-				}
-
-				if c.GlobalBool("once") {
-					logrus.Info("Output generated")
-					return nil
-				}
-
-				// parse the duration
-				dur, err := time.ParseDuration(c.String("interval"))
-				if err != nil {
-					logrus.Fatalf("parsing %s as duration failed: %v", c.String("interval"), err)
-				}
-				ticker := time.NewTicker(dur)
-
-				// TODO! implement README.md updates on site
-				go func() {
-					// create more indexes every X minutes based off interval
-					for range ticker.C {
-						if !updating {
-							logrus.Info("creating timer based static index")
-							if err := rc.repositories(staticDir); err != nil {
-								logrus.Warnf("creating static index failed: %v", err)
-								updating = false
-							}
-						} else {
-							logrus.Warnf("skipping timer based static index update for %s", c.String("interval"))
-						}
-					}
-				}()
-		*/
 		// create r server
 		r := mux.NewRouter()
 		r.UseEncodedPath()
@@ -244,16 +204,6 @@ func main() {
 
 		// static files handler
 		staticHandler := http.FileServer(http.Dir(staticDir))
-
-		/*
-			r.HandleFunc("/repo/{username}/{container}", rc.tagsHandler)
-			r.HandleFunc("/repo/{username}/{container}/", rc.tagsHandler)
-			r.HandleFunc("/repo/{username}/{container}/tag/{tag}", rc.vulnerabilitiesHandler)
-			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/", rc.vulnerabilitiesHandler)
-			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns", rc.vulnerabilitiesHandler)
-			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns/", rc.vulnerabilitiesHandler)
-			r.HandleFunc("/repo/{username}/{container}/tag/{tag}/vulns.json", rc.vulnerabilitiesHandler)
-		*/
 
 		// Make sure we handle css, img and js without the container handler overriding anything
 		r.PathPrefix("/css/").Handler(http.StripPrefix("/", staticHandler))
