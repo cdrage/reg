@@ -258,6 +258,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		RegistryDomain: rc.reg.Domain,
 		LastUpdated:    time.Now().Local().Format(time.RFC822),
 		Name:           imageName,
+		Latest:         "latest",
 	}
 
 	for _, tag := range apiTags.Tags {

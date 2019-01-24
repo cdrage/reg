@@ -15,22 +15,22 @@
 
     <main role="main">
     <h2 class="text-center">{{ .RegistryDomain }}/{{ .Name }}</h2>
-    <!-- <p class="pull-commands">
+    <p class="pull-commands">
     docker pull {{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }}
     <br>
     rkt insecure-options=image fetch docker://{{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }}
     <br>
     skopeo insecure-policy copy docker://{{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }} oci:{{ .Name }}:{{ .Latest }}
-    </p> -->
+    </p>
 
-      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+      <!-- ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
         <li class="nav-item">
-          <a class="nav-link active" id="tags-tab" data-toggle="pill" href="#tags" role="tab" aria-controls="tags" aria-selected="true" style="padding-left:0;">Tags</a>
+          <a class="nav-link active" id="tags-tab" data-toggle="pill" href="#tags" role="tab" aria-controls="tags" aria-selected="true" style="padding-left:0;"></a>
         </li>
-        <!--li class="nav-item">
+        <-li class="nav-item">
           <a class="nav-link" id="dockerfile-tab" data-toggle="pill" href="#source-repo" role="tab" aria-controls="source-repo" aria-selected="false">Source Repo</a>
-        </li-->
-      </ul>
+        </li>
+      </ul-->
 
       <div class="tab-content" id="pills-tabContent">
 
@@ -68,10 +68,6 @@
                 {{ end }}
             </table>
         </div>
-
-          <!--div class="tab-pane fade" id="source-repo" role="tabpanel" aria-labelledby="source-repo-tab">
-             {{ .SourceRepo}}
-          </div -->
     </div>
 
     </div>
