@@ -60,10 +60,11 @@ type Tag struct {
 	Image       string `json:"image" mapstructure:"image"`
 	Tag         string `json:"desired_tag" mapstructure:"desired_tag"`
 	BuildStatus string `json:"build_status" mapstructure:"build_status"`
+	PullCount   string `json:"pull_count"`
 	CreatedAt   string `json:"created_at"`
 }
 
-// A AnalysisResult holds all vulnerabilities of a scan
+// A TagList holds all the tags for specific appid and jobid
 type TagList struct {
 	Meta           Meta   `json:"meta" mapstructure:"meta"`
 	AppID          string `json:"app_id" mapstructure:"app_id"`
@@ -123,7 +124,7 @@ func getImageCreatedDate(rc *registryController, image string, tag string) strin
 		var comp v1Compatibility
 
 		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
-			logrus.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
+			logrus.Errorf("unmarshal v1 manifest for %s:%s failed: %v", image, tag, err)
 			return ""
 		}
 		createdDate = comp.Created
@@ -160,6 +161,10 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 	}
 
 	return data, err
+}
+
+func getImagePullCount(app_id string, job_id string, desired_tag string) string {
+	return "todo:pull_count"
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -216,23 +221,26 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
+	app_id := vars["appid"]
+	job_id := vars["jobid"]
+
 	// Change the path to username/container
-	if vars["appid"] == "" && vars["jobid"] == "" {
+	if app_id == "" && job_id == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "Empty repo")
 		return
 	}
 
-	imageName := vars["appid"] + "/" + vars["jobid"]
+	imageName := app_id + "/" + job_id
 
 	//If it is a library image we will have the appid blank
-	if vars["appid"] == "" && vars["jobid"] != "" {
-		vars["appid"] = "library"
-		imageName = vars["jobid"]
+	if app_id == "" && job_id != "" {
+		app_id = "library"
+		imageName = job_id
 	}
 
-	repo := vars["appid"] + "/" + vars["jobid"]
-	repoPath := "app-ids/" + vars["appid"] + "/job-ids/" + vars["jobid"]
+	repo := app_id + "/" + job_id
+	repoPath := "app-ids/" + app_id + "/job-ids/" + job_id
 
 	logrus.Debugf("Getting repo tag list %s", repo)
 
@@ -266,6 +274,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		tag_detail.Image = imageName
 		tag_detail.BuildStatus = tag.BuildStatus
 		tag_detail.Tag = tag.Tag
+		tag_detail.PullCount = getImagePullCount(app_id, job_id, tag.Tag)
 		tag_detail.CreatedAt = getImageCreatedDate(rc, imageName, tag.Tag)
 
 		tagList.Tags = append(tagList.Tags, tag_detail)
