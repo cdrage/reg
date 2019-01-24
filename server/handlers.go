@@ -57,18 +57,18 @@ type ImageList struct {
 }
 
 type Tag struct {
-	Image       string `json:"image"`
-	Tag         string `json:"desired_tag"`
-	BuildStatus string `json:"build_status"`
+	Image       string `json:"image" mapstructure:"image"`
+	Tag         string `json:"desired_tag" mapstructure:"desired_tag"`
+	BuildStatus string `json:"build_status" mapstructure:"build_status"`
 	CreatedAt   string `json:"created_at"`
 }
 
 // A AnalysisResult holds all vulnerabilities of a scan
 type TagList struct {
-	Meta           Meta   `json:"meta"`
-	AppID          string `json:"app_id"`
-	JobID          string `json:"job_id"`
-	Tags           []Tag  `json:"tags"`
+	Meta           Meta   `json:"meta" mapstructure:"meta"`
+	AppID          string `json:"app_id" mapstructure:"app_id"`
+	JobID          string `json:"job_id" mapstructure:"job_id"`
+	Tags           []Tag  `json:"tags" mapstructure:"tags"`
 	RegistryDomain string `json:"registryDomain"`
 	Latest         string `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
 	Name           string
@@ -111,6 +111,26 @@ type TagDetails struct {
 	SourceRepo string
 }
 
+func getImageCreatedDate(rc *registryController, image string, tag string) string {
+	m1, err := rc.reg.ManifestV1(image, tag)
+	if err != nil {
+		logrus.Warningf("Manifest not found in registry")
+		return ""
+	}
+	var createdDate time.Time
+	for _, h := range m1.History {
+		var comp v1Compatibility
+
+		if err := json.Unmarshal([]byte(h.V1Compatibility), &comp); err != nil {
+			logrus.Errorf("unmarshal v1 manifest for %s:%s failed: %v", repo, tag, err)
+			return ""
+		}
+		createdDate = comp.Created
+		break
+	}
+	return createdDate.Local().Format(time.RFC822)
+}
+
 func getAPIData(uri string, datatype string) (interface{}, error) {
 	url := APIURL + "/v1/namespaces/" + NAMESPACE + "/" + uri
 
@@ -118,6 +138,7 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 	DataType = make(map[string]interface{})
 	DataType["Namespace"] = make([]Namespace, 1)
 	DataType["ImageList"] = make([]ImageList, 1)
+	DataType["TagList"] = make([]TagList, 1)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -190,107 +211,72 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 	return
 }
 
+//This function renders all the tags with build status for specific app_id and job_id
 func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Request) {
-	/*	logrus.WithFields(logrus.Fields{
-			"func":   "tagList",
+	vars := mux.Vars(r)
+
+	// Change the path to username/container
+	if vars["appid"] == "" && vars["jobid"] == "" {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Empty repo")
+		return
+	}
+
+	imageName := vars["appid"] + "/" + vars["jobid"]
+
+	//If it is a library image we will have the appid blank
+	if vars["appid"] == "" && vars["jobid"] != "" {
+		vars["appid"] = "library"
+		imageName = vars["jobid"]
+	}
+
+	repo := vars["appid"] + "/" + vars["jobid"]
+	repoPath := "app-ids/" + vars["appid"] + "/job-ids/" + vars["jobid"]
+
+	logrus.Debugf("Getting repo tag list %s", repo)
+
+	var apiTags TagList
+
+	api_data, err := getAPIData(repoPath+"/desired-tags", "TagList")
+	if err != nil {
+		logrus.Errorf("Could not retrieve tag list %v", err)
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		return
+	}
+
+	err = mapstructure.Decode(api_data, &apiTags)
+	if err != nil || len(apiTags.Tags) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No tags found")
+		logrus.Errorf("Could not decode tag list %v", err)
+		return
+	}
+
+	tagList := TagList{
+		RegistryDomain: rc.reg.Domain,
+		Name:           imageName,
+	}
+
+	for _, tag := range apiTags.Tags {
+		var tag_detail Tag
+		tag_detail.Image = imageName
+		tag_detail.BuildStatus = tag.BuildStatus
+		tag_detail.Tag = tag.Tag
+		tag_detail.CreatedAt = getImageCreatedDate(rc, imageName, tag.Tag)
+
+		tagList.Tags = append(tagList.Tags, tag_detail)
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "tagList", tagList); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"func":   "images",
 			"URL":    r.URL,
 			"method": r.Method,
-		}).Info("fetching list of tags")
-
-		vars := mux.Vars(r)
-
-		// Change the path to username/container
-		if vars["appid"] == "" && vars["jobid"] == "" {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Empty repo")
-			return
-		}
-
-		//If it is a library image we will have the appid blank
-		if vars["appid"] == "" && vars["jobid"] != "" {
-			vars["appid"] = "library"
-		}
-		repo := vars["appid"] + "/" + vars["jobid"]
-		repoPath := "app-ids/" + vars["appid"] + "/job-ids/" + vars["jobid"]
-
-		logrus.Debugf("Getting repo tag list %s", repo)
-
-		data := TagList{
-			RegistryDomain: rc.reg.Domain,
-		}
-
-		//Get the full API path for the repo
-		repoAPIURL := generateAPIURL(repoPath + "/desired-tags")
-		//Get details from api server
-		resp, err := http.Get(repoAPIURL)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("getting details for %s failed: %v", repo, err)
-			w.WriteHeader(http.StatusNoContent)
-			fmt.Fprint(w, "Error while retriving tags")
-			return
-		}
-
-		//process json object for taglist
-		defer resp.Body.Close()
-		err = json.NewDecoder(resp.Body).Decode(&data)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("decoding details for %s failed: %v", repo, err)
-			w.WriteHeader(http.StatusNoContent)
-			fmt.Fprint(w, "Error while decoding API output")
-			return
-		}
-
-		if len(data.Tags) == 0 {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "No tags found")
-			return
-		}
-
-		// Sanitize and convert markdown output
-
-		result := TagList{
-			RegistryDomain: rc.reg.Domain,
-			Name:           repo,
-		}
-
-		for _, tag := range data.Tags {
-
-			//TODO: Get the actual build status from the API
-			latestbuildstatus := "success"
-
-			repoURI := fmt.Sprintf("%s/%s", rc.reg.Domain, repo)
-			if tag != "latest" {
-				repoURI += ":" + tag
-			}
-			rp := Repository{
-				Name:        repo,
-				Tag:         tag,
-				BuildStatus: latestbuildstatus,
-				URI:         repoURI,
-			}
-
-			result.Tags = append(result.Tags, rp.Tag)
-			result.Repositories = append(result.Repositories, rp)
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "tagList", result); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("template rendering failed: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	*/
+		}).Errorf("template rendering failed: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	return
 }
 
