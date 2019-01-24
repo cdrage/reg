@@ -42,7 +42,7 @@
                     <th>Latest Build</th>
                     <th>Created</th>
                 </tr>
-                {{ range $key, $value := .Repositories }}
+                {{ range $key, $value := .Tags }}
                 <tr>
                     <td valign="left" nowrap>
                         <a href="/{{ $value.Image }}/{{ $value.Tag }}/">

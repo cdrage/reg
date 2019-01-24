@@ -72,6 +72,7 @@ type TagList struct {
 	RegistryDomain string `json:"registryDomain"`
 	Latest         string `json:"latest"` // The "latest" string. If latest doesn't exist, use highest version number
 	Name           string
+	LastUpdated    string
 }
 
 type ScanLogsGroup struct {
@@ -255,6 +256,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 
 	tagList := TagList{
 		RegistryDomain: rc.reg.Domain,
+		LastUpdated:    time.Now().Local().Format(time.RFC822),
 		Name:           imageName,
 	}
 
