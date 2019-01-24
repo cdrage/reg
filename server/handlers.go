@@ -164,7 +164,7 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 }
 
 func getImagePullCount(app_id string, job_id string, desired_tag string) string {
-	return "todo:pull_count"
+	return "pull_count"
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
