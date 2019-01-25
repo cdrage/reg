@@ -406,7 +406,7 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	buildDetails.BuildLogs = apiBuildDetails.BuildLogs
 	buildDetails.PreBuildRequested = apiTargetFile.PreBuildRequested
 
-	if err := tmpl.ExecuteTemplate(w, "tagList", buildDetails); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "tagDetails", buildDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"func":   "tags",
 			"URL":    r.URL,
