@@ -78,10 +78,10 @@ type TagList struct {
 }
 
 type TargetFile struct {
-	Meta              Meta   `json:"meta"`
-	PreBuildRequested bool   `json:"prebuild"`
-	TargetFileLink    string `json:"target_file_link"`
-	SourceRepo        string `json:"source_repo"`
+	Meta              Meta   `json:"meta" mapstructure:"meta"`
+	PreBuildRequested bool   `json:"prebuild" mapstructure:"prebuild"`
+	TargetFileLink    string `json:"target_file_link" mapstructure:"target_file_link"`
+	SourceRepo        string `json:"source_repo" mapstructure:"source_repo"`
 }
 
 type ScanLog struct {
@@ -90,32 +90,35 @@ type ScanLog struct {
 }
 
 type ScanLogsGroup struct {
-	ScannerName []ScanLog `json:"scanner_name"`
+	ScannerName []ScanLog `json:"scanner_name" mapstructure:"scanner_name"`
 }
 
 //All the logs for builds
 type BuildLogsGroup struct {
 	BuildNumber string
-	PreBuildLog string        `json:"prebuild"`
-	LintLog     string        `json:"lint"`
-	BuildLog    string        `json:"build"`
-	ScanLog     ScanLogsGroup `json:"scan"`
+	PreBuildLog string        `json:"prebuild" mapstructure:"prebuild"`
+	LintLog     string        `json:"lint" mapstructure:"lint"`
+	BuildLog    string        `json:"build" mapstructure:"build"`
+	ScanLog     ScanLogsGroup `json:"scan" mapstructure:"scan"`
 	DeliveryLog string
 	NotifyLog   string
 }
 
 type BuildDetails struct {
-	Meta              Meta           `json:"meta"`
-	BuildLogs         BuildLogsGroup `json:"logs"`
+	Meta              Meta           `json:"meta" mapstructure:"meta"`
+	BuildLogs         BuildLogsGroup `json:"logs" mapstructure:"logs"`
 	WScanLogs         ScanLogsGroup
 	RegistryDomain    string `json:"registryDomain"`
 	Image             string `json:"image"`
 	LastUpdated       string `json:"lastUpdated"`
 	Tag               string `json:"desired_tag"`
 	IsLibrary         bool
-	AppID             string `json:"app_id"`
-	JobID             string `json:"job_id"`
-	PreBuildRequested bool
+	AppID             string
+	JobID             string
+	PreBuildRequested bool   `json:"pre-build" mapstructure:"pre-build"`
+	BuildNumber       string `json:"build" mapstructure:"build"`
+	FailedStage       string `json:"failed-stage" mapstructure:"failed-stage"`
+	BuildStatus       string `json:"status" mapstructure:"status"`
 
 	// Extra bits
 	TargetFile string
