@@ -4,14 +4,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/russross/blackfriday.v2"
 
 	"reg/clair"
 	"reg/registry"
@@ -84,8 +85,8 @@ type TargetFile struct {
 }
 
 type ScanLog struct {
-	Description string        `json:"description" mapstructure:"description"`
-	Logs        template.HTML `json:"logs" mapstructure:"logs"`
+	Description string `json:"description" mapstructure:"description"`
+	Logs        string `json:"logs" mapstructure:"logs"`
 }
 
 type ScanLogsGroup struct {
@@ -95,9 +96,9 @@ type ScanLogsGroup struct {
 //All the logs for builds
 type BuildLogsGroup struct {
 	BuildNumber string
-	PreBuildLog template.HTML `json:"prebuild"`
-	LintLog     template.HTMl `json:"lint"`
-	BuildLog    template.HTML `json:"build"`
+	PreBuildLog string        `json:"prebuild"`
+	LintLog     string        `json:"lint"`
+	BuildLog    string        `json:"build"`
 	ScanLog     ScanLogsGroup `json:"scan"`
 	DeliveryLog string
 	NotifyLog   string
@@ -117,8 +118,8 @@ type BuildDetails struct {
 	PreBuildRequested bool
 
 	// Extra bits
-	TargetFile template.HTML
-	Readme     template.HTML
+	TargetFile string
+	Readme     string
 	SourceRepo string
 }
 
@@ -190,28 +191,10 @@ func retrieveContent(contentLink string) string {
 		fmt.Printf("Unable to read content")
 		return ""
 	}
-	return string(content)
-}
 
-func retrieveHTMLContent(contentLink string) template.HTML {
-
-	resp, err := http.Get(contentLink)
-	if err != nil {
-		fmt.Printf("Error retirving content")
-		return ""
-	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Unable to read content")
-		return ""
-	}
-
-	var html template.HTML
 	unsafe := blackfriday.Run([]byte(content))
-	html = bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-
-	return html
+	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	return string(html)
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -346,8 +329,6 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 		"method": r.Method,
 	}).Info("fetching tags")
 
-	var tagDetails TagDetails
-
 	vars := mux.Vars(r)
 
 	app_id := vars["appid"]
@@ -384,7 +365,7 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	}
 
 	err = mapstructure.Decode(api_data, &apiTargetFile)
-	if err != nil || apiTargetFile.SourceRepo == nil {
+	if err != nil || apiTargetFile.SourceRepo == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "No Source Repo found")
 		logrus.Errorf("Could not decode Target File %v", err)
