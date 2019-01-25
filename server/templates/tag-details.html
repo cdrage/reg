@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="/css/github.css">
   <link rel="stylesheet" href="/css/gfm.css">
   <script src="/js/highlight.pack.js"></script>
+  <script>
+     $(document).ready(function(){
+       $("ul.nav-tabs a").click(function (e) {
+          e.preventDefault();
+          $(this).tab('show');
+	   });
+     });
+  </script>
 </head>
 
 <body>
