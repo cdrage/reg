@@ -76,39 +76,48 @@ type TagList struct {
 	LastUpdated    string
 }
 
+type TargetFile struct {
+	Meta              Meta   `json:"meta"`
+	PreBuildRequested bool   `json:"prebuild"`
+	TargetFileLink    string `json:"target_file_link"`
+	SourceRepo        string `json:"source_repo"`
+}
+
+type ScanLog struct {
+	Description string        `json:"description" mapstructure:"description"`
+	Logs        template.HTML `json:"logs" mapstructure:"logs"`
+}
+
 type ScanLogsGroup struct {
-	RPMUpdate    string
-	RPMVerify    string
-	ContainerCap string
-	MiscUpdate   string
+	ScannerName []ScanLog `json:"scanner_name"`
 }
 
 //All the logs for builds
 type BuildLogsGroup struct {
-	BuildNumber int
-	PreBuildLog string
-	LintLog     string
-	BuildLog    string
-	ScanLog     []ScanLogsGroup
+	BuildNumber string
+	PreBuildLog template.HTML `json:"prebuild"`
+	LintLog     template.HTMl `json:"lint"`
+	BuildLog    template.HTML `json:"build"`
+	ScanLog     ScanLogsGroup `json:"scan"`
 	DeliveryLog string
 	NotifyLog   string
 }
 
-type TagDetails struct {
-	BuildLogs         []BuildLogsGroup
-	WScanLogs         []ScanLogsGroup
+type BuildDetails struct {
+	Meta              Meta           `json:"meta"`
+	BuildLogs         BuildLogsGroup `json:"logs"`
+	WScanLogs         ScanLogsGroup
 	RegistryDomain    string `json:"registryDomain"`
-	Image             string `json:"name"`
+	Image             string `json:"image"`
 	LastUpdated       string `json:"lastUpdated"`
 	Tag               string `json:"desired_tag"`
 	IsLibrary         bool
 	AppID             string `json:"app_id"`
 	JobID             string `json:"job_id"`
 	PreBuildRequested bool
-	TargetFileLink    string `json:"target_file_link"`
 
 	// Extra bits
-	TargetFile string
+	TargetFile template.HTML
 	Readme     template.HTML
 	SourceRepo string
 }
@@ -141,6 +150,8 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 	DataType["Namespace"] = make([]Namespace, 1)
 	DataType["ImageList"] = make([]ImageList, 1)
 	DataType["TagList"] = make([]TagList, 1)
+	DataType["TargetFile"] = make([]TargetFile, 1)
+	DataType["BuildDetails"] = make([]BuildDetails, 1)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -165,6 +176,42 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 
 func getImagePullCount(app_id string, job_id string, desired_tag string) string {
 	return "pull_count"
+}
+
+func retrieveContent(contentLink string) string {
+	resp, err := http.Get(contentLink)
+	if err != nil {
+		fmt.Printf("Error retirving content")
+		return ""
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Unable to read content")
+		return ""
+	}
+	return string(content)
+}
+
+func retrieveHTMLContent(contentLink string) template.HTML {
+
+	resp, err := http.Get(contentLink)
+	if err != nil {
+		fmt.Printf("Error retirving content")
+		return ""
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Unable to read content")
+		return ""
+	}
+
+	var html template.HTML
+	unsafe := blackfriday.Run([]byte(content))
+	html = bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+
+	return html
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -293,89 +340,176 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	/*
+	logrus.WithFields(logrus.Fields{
+		"func":   "tagDetails",
+		"URL":    r.URL,
+		"method": r.Method,
+	}).Info("fetching tags")
+
+	var tagDetails TagDetails
+
+	vars := mux.Vars(r)
+
+	app_id := vars["appid"]
+	job_id := vars["jobid"]
+	desired_tag := vars["desiredtag"]
+
+	// Check if it is a blank request
+	if app_id == "" && job_id == "" && desired_tag == "" {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "Empty repo")
+		return
+	}
+
+	imageName := app_id + "/" + job_id
+	//For library images appid would be blank
+	if app_id == "" && job_id != "" && desired_tag != "" {
+		app_id = "library"
+		imageName = job_id
+	}
+
+	repo := app_id + "/" + job_id + "/" + desired_tag
+	repoPath := "app-ids/" + app_id + "/job-ids/" + job_id + "/desired-tags/" + desired_tag
+
+	logrus.Debugf("Getting repo %s", repo)
+
+	var apiTargetFile TargetFile
+
+	api_data, err := getAPIData(repoPath+"/target-file", "TargetFile")
+	if err != nil {
+		logrus.Errorf("Could not retrieve target file details %v", err)
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No Target File found")
+		return
+	}
+
+	err = mapstructure.Decode(api_data, &apiTargetFile)
+	if err != nil || apiTargetFile.SourceRepo == nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No Source Repo found")
+		logrus.Errorf("Could not decode Target File %v", err)
+		return
+	}
+
+	var apiBuildDetails BuildDetails
+
+	api_data, err = getAPIData(repoPath+"/builds/lastBuild/logs", "BuildDetails")
+	if err != nil {
+		logrus.Errorf("Could not retrieve build details %v", err)
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No Build Logs found")
+		return
+	}
+
+	err = mapstructure.Decode(api_data, &apiBuildDetails)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "No Logs found")
+		logrus.Errorf("Could not decode Build Details %v", err)
+		return
+	}
+
+	buildDetails := BuildDetails{
+		RegistryDomain: rc.reg.Domain,
+		LastUpdated:    time.Now().Local().Format(time.RFC822),
+		Image:          imageName,
+		Tag:            desired_tag,
+	}
+
+	buildDetails.TargetFile = retrieveContent(apiTargetFile.TargetFileLink)
+	buildDetails.SourceRepo = apiTargetFile.SourceRepo
+	buildDetails.Readme = retrieveContent(apiTargetFile.SourceRepo + "README.md")
+	buildDetails.BuildLogs = apiBuildDetails.BuildLogs
+	buildDetails.PreBuildRequested = apiTargetFile.PreBuildRequested
+
+	if err := tmpl.ExecuteTemplate(w, "tagList", buildDetails); err != nil {
 		logrus.WithFields(logrus.Fields{
-			"func":   "tagDetails",
+			"func":   "tags",
 			"URL":    r.URL,
 			"method": r.Method,
-		}).Info("fetching tags")
+		}).Errorf("template rendering failed: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	return
+}
 
-		var tagDetails TagDetails
+func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+		logrus.WithFields(logrus.Fields{
+			"func":   "vulnerabilities",
+			"URL":    r.URL,
+			"method": r.Method,
+		}).Info("fetching vulnerabilities")
 
 		vars := mux.Vars(r)
 
 		// Change the path to username/container
-		if vars["appid"] == "" && vars["jobid"] == "" && vars["desiredtag"] == "" {
+		if vars["username"] == "" || vars["container"] == "" {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "Empty repo")
 			return
 		}
-		//For library images appid would be blank
-		if vars["appid"] == "" && vars["jobid"] != "" && vars["desiredtag"] != "" {
-			vars["appid"] = "library"
-		}
+		repo := vars["username"] + "/" + vars["container"]
 
-		repo := vars["appid"] + "/" + vars["jobid"] + "/" + vars["desiredtag"]
-		repoPath := "app-ids/" + vars["appid"] + "/job-ids/" + vars["jobid"] + "/desired-tags/" + vars["desiredtag"]
+		// Retrieve tag
+		tag := vars["tag"]
 
-		logrus.Debugf("Getting repo %s", repo)
-
-		targetfileAPIURL := generateAPIURL(repoPath + "/target-file")
-
-		if err != nil {
+		if tag == "" {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Target file details not found")
-			return
-		}
-		prebuildRequested := true
-		targetfileLink := "targetfile link"
-
-		metadataAPIURL := generateAPIURL(repoPath + "/metadata")
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Target file details not found")
+			fmt.Fprint(w, "Empty tag")
 			return
 		}
 
-		//Fix the git url without .git
-		gitURL := metadata.git - url
-		if strings.HasSuffix(gitURL, ".git") {
-			gitURL := strings.TrimRight(gitURL, ".git")
-		}
-
-		sourceRepo := gitURL + "/tree/" + metadata.git - branch
-		readmeLink := gitURL + "/" + metadata.git - branch + "/README.md"
-
-		//TODO: retrieve Readme and targetfile content
-		targetfile := retrieveContent(targetfileLink)
-		readme := retrieveContent(readmeLink)
-
-		result := TagDetails{
-			RegistryDomain: rc.reg.Domain,
-			LastUpdated:    time.Now().Local().Format(time.RFC1123),
-			Name:           repo,
-			TargetFile:     string(targetfile),
-			Readme:         template.HTML(readme),
-		}
-
-		buildList, err := getDetailsFromAPI(repo + "/builds")
+		m1, err := rc.reg.ManifestV1(repo, tag)
 		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "No builds found for %s", repo)
-			return
-		}
-		latestBuildNum := len(buildList.builds) + 1
-
-		latestBuildLogs, err := getDetailsFromAPI(repo + "/" + LatestBuildNum + "/build-logs")
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Target file details not found")
-			return
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "tagList", result); err != nil {
 			logrus.WithFields(logrus.Fields{
-				"func":   "tags",
+				"func":   "vulnerabilities",
+				"URL":    r.URL,
+				"method": r.Method,
+				"repo":   repo,
+				"tag":    tag,
+			}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "Manifest not found")
+			return
+		}
+
+		result := clair.VulnerabilityReport{}
+
+		if rc.cl != nil {
+			result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"func":   "vulnerabilities",
+					"URL":    r.URL,
+					"method": r.Method,
+				}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if strings.HasSuffix(r.URL.String(), ".json") {
+			js, err := json.Marshal(result)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"func":   "vulnerabilities",
+					"URL":    r.URL,
+					"method": r.Method,
+				}).Errorf("json marshal failed: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(js)
+			return
+		}
+
+		if err := tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
+			logrus.WithFields(logrus.Fields{
+				"func":   "vulnerabilities",
 				"URL":    r.URL,
 				"method": r.Method,
 			}).Errorf("template rendering failed: %v", err)
@@ -383,90 +517,6 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 	*/
-	return
-}
-
-func (rc *registryController) vulnerabilitiesHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.WithFields(logrus.Fields{
-		"func":   "vulnerabilities",
-		"URL":    r.URL,
-		"method": r.Method,
-	}).Info("fetching vulnerabilities")
-
-	vars := mux.Vars(r)
-
-	// Change the path to username/container
-	if vars["username"] == "" || vars["container"] == "" {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Empty repo")
-		return
-	}
-	repo := vars["username"] + "/" + vars["container"]
-
-	// Retrieve tag
-	tag := vars["tag"]
-
-	if tag == "" {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Empty tag")
-		return
-	}
-
-	m1, err := rc.reg.ManifestV1(repo, tag)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"func":   "vulnerabilities",
-			"URL":    r.URL,
-			"method": r.Method,
-			"repo":   repo,
-			"tag":    tag,
-		}).Errorf("getting v1 manifest for %s:%s failed: %v", repo, tag, err)
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "Manifest not found")
-		return
-	}
-
-	result := clair.VulnerabilityReport{}
-
-	if rc.cl != nil {
-		result, err = rc.cl.Vulnerabilities(rc.reg, repo, tag, m1)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("vulnerability scanning for %s:%s failed: %v", repo, tag, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if strings.HasSuffix(r.URL.String(), ".json") {
-		js, err := json.Marshal(result)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"func":   "vulnerabilities",
-				"URL":    r.URL,
-				"method": r.Method,
-			}).Errorf("json marshal failed: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-		return
-	}
-
-	if err := tmpl.ExecuteTemplate(w, "vulns", result); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"func":   "vulnerabilities",
-			"URL":    r.URL,
-			"method": r.Method,
-		}).Errorf("template rendering failed: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	return
 }
 

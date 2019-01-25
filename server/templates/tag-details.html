@@ -3,7 +3,7 @@
 
 <head>
   {{template "head" .}}
-  <title>{{ .RegistryDomain }}/{{ .Name }}</title>
+  <title>{{ .RegistryDomain }}/{{ .Image }}</title>
   <link rel="stylesheet" href="/css/github.css">
   <link rel="stylesheet" href="/css/gfm.css">
   <script src="/js/highlight.pack.js"></script>
@@ -15,24 +15,26 @@
     {{template "header" .}}
 
     <main role="main">
-    <h2 class="text-center">{{ .RegistryDomain }}/{{ .Name }}</h2>
+    <h2 class="text-center">{{ .RegistryDomain }}/{{ .Image }}</h2>
     <p class="pull-commands">
-    docker pull {{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }}
+    docker pull {{ .RegistryDomain }}/{{ .Image }}:{{ .Tag }}
     <br>
-    rkt --insecure-options=image fetch docker://{{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }}
+    rkt --insecure-options=image fetch docker://{{ .RegistryDomain }}/{{ .Image }}:{{ .Tag }}
     <br>
-    skopeo --insecure-policy copy docker://{{ .RegistryDomain }}/{{ .Name }}:{{ .Latest }} oci:{{ .Name }}:{{ .Latest }}
+    skopeo --insecure-policy copy docker://{{ .RegistryDomain }}/{{ .Image }}:{{ .Tag }}
+    <br>
+    oci:{{ .Image }}:{{ .Tag }}
     </p>
 
       <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
         <li class="nav-item">
           <a class="nav-link active" id="build-logs-tab" data-toggle="pill" href="#build-logs" role="tab" aria-controls="build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
         </li>
-        <li class="nav-item">
+        <!--li class="nav-item">
           <a class="nav-link" id="weekly-scan-logs-tab" data-toggle="pill" href="#weekly-scan-logs" role="tab" aria-controls="weekly-scan-logs" aria-selected="true" style="padding-left:0;">Weekly Scan Logs</a>
-        </li>
+        </li-->
 
-        {{ if ne .Dockerfile "" }}
+        {{ if ne .TargetFile "" }}
         <li class="nav-item">
           <a class="nav-link" id="dockerfile-tab" data-toggle="pill" href="#dockerfile" role="tab" aria-controls="dockerfile" aria-selected="false">Dockerfile</a>
         </li>
@@ -42,9 +44,6 @@
           <a class="nav-link" id="description-tab" data-toggle="pill" href="#description" role="tab" aria-controls="description" aria-selected="false">Description</a>
         </li>
         {{ end }}
-        <li class="nav-item">
-          <a class="nav-link" id="source-repo-tab" data-toggle="pill" href="#source-repo" role="tab" aria-controls="source-repo" aria-selected="true" style="padding-left:0;">Source Repo</a>
-        </li>
       </ul>
 
       <div class="tab-content" id="pills-tabContent">
@@ -67,7 +66,7 @@
            <ul>
         </div>
 
-        <div class="tab-pane fade show active" id="weekly-scan-logs" role="tabpanel" aria-labelledby="weekly-scan-logs-tab">
+        <!-- div class="tab-pane fade show active" id="weekly-scan-logs" role="tabpanel" aria-labelledby="weekly-scan-logs-tab">
 
            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
              <li class="nav-item">
@@ -83,10 +82,14 @@
                <a class="nav-link" id="ws-misc-update" data-toggle="pill" href="#ws-misc-update" role="tab" aria-controls="ws-misc-update" aria-selected="true" style="padding-left:0;">Miscellaneous Update</a>
              </li>
            <ul>
-        </div>
-        {{ if ne .Dockerfile "" }}
-          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">
-            <pre class="highlight-code"><code class="dockerfile">{{ .Dockerfile }}</code></pre>
+        </div-->
+        {{ if ne .TargetFile "" }}
+          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">i
+            <p>
+               Source Repo: {{ .SourceRepo }}
+               <br/>
+            </p>
+            <pre class="highlight-code"><code class="dockerfile">{{ .TargetFile }}</code></pre>
           </div>
         {{ end }}
 
@@ -96,12 +99,7 @@
           {{ .Readme }}
           </div>
         {{ end }}
-
-
     </div>
-
-
-
 
     </div>
     {{template "footer" .}}
