@@ -12,7 +12,7 @@
        $("ul.nav-tabs a").click(function (e) {
           e.preventDefault();
           $(this).tab('show');
-	   });
+       });
      });
   </script>
 </head>
@@ -51,38 +51,38 @@
         {{ end }}
       </ul>
       <div class="tab-content" id="master-tabContent">
-	<div class="tab-pane fade active in" id="build-logs">
-	   <div class="tabbable">
-           <ul class="nav nav-tabs mb-3" id="bl-tab">
-             <li class="nav-item">
-               <a class="nav-link active" id="bl-build-logs" href="#bl-build-logs-content">Build Logs</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="bl-pre-build-tab" href="#bl-pre-build">Pre-build Logs</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="bl-linter-logs" href="#bl-linter-logs">Targetfile Linting Logs</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="bl-scan-logs" href="#bl-scan-logs">Scan Logs</a>
-             </li>
-           <ul>
-	    <div class="tab-content" id="bl-tabContent">
-		<div class="tab-pane fade active in" id="bl-build-logs-content">
-	            {{ .BuildLogs.BuildLog }}
-		</div>
-		<div class="tab-pane fade" id="bl-pre-build">
-	            {{ .BuildLogs.PreBuildLog }}
-		</div>
-		<div class="tab-pane fade" id="bl-linter-logs">
-	            {{ .BuildLogs.LintLog }}
-		</div>
-		<div class="tab-pane fade" id="bl-scan-logs">
-	            {{ .BuildLogs.ScanLog }}
-		</div>
-	    </div>
-      </div>
-	</div>
+        <div class="tab-pane fade active in" id="build-logs">
+           <div class="tabbable">
+               <ul class="nav nav-tabs mb-3" id="bl-tab">
+                 <li class="nav-item">
+                   <a class="nav-link active" id="bl-build-logs" href="#bl-build-logs-content">Build Logs</a>
+                 </li>
+                 <li class="nav-item">
+                   <a class="nav-link" id="bl-pre-build-tab" href="#bl-pre-build">Pre-build Logs</a>
+                 </li>
+                 <li class="nav-item">
+                   <a class="nav-link" id="bl-linter-logs" href="#bl-linter-logs">Targetfile Linting Logs</a>
+                 </li>
+                 <li class="nav-item">
+                   <a class="nav-link" id="bl-scan-logs" href="#bl-scan-logs">Scan Logs</a>
+                 </li>
+               <ul>
+               <div class="tab-content" id="bl-tabContent">
+                    <div class="tab-pane fade active in" id="bl-build-logs-content">
+                            {{ .BuildLogs.BuildLog }}
+                    </div>
+                    <div class="tab-pane fade" id="bl-pre-build">
+                            {{ .BuildLogs.PreBuildLog }}
+                    </div>
+                    <div class="tab-pane fade" id="bl-linter-logs">
+                            {{ .BuildLogs.LintLog }}
+                    </div>
+                    <div class="tab-pane fade" id="bl-scan-logs">
+                        {{ .BuildLogs.ScanLog }}
+                    </div>
+                </div>
+             </div>
+            </div>
 
         {{ if ne .TargetFile "" }}
           <div class="tab-pane fade" id="dockerfile">
@@ -96,9 +96,9 @@
 
         {{ if ne .Readme "" }}
           <div class="tab-pane fade" id="description">
-          <p class="markdown-body">
-          {{ .Readme }}
-	  </p>
+            <p class="markdown-body">
+             {{ .Readme }}
+            </p>
           </div>
         {{ end }}
     </div>
