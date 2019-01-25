@@ -15,7 +15,7 @@
     {{template "header" .}}
 
     <main role="main">
-    <h2 class="text-center">{{ .RegistryDomain }}/{{ .Image }}</h2>
+        <h2 class="text-center">{{ .RegistryDomain }}/{{ .Image }}:{{ .Tag }}</h2>
     <p class="pull-commands">
     docker pull {{ .RegistryDomain }}/{{ .Image }}:{{ .Tag }}
     <br>
@@ -52,13 +52,13 @@
 
            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
              <li class="nav-item">
+               <a class="nav-link" id="bl-build-logs" data-toggle="pill" href="#bl-build-logs" role="tab" aria-controls="bl-build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+             </li>
+             <li class="nav-item">
                <a class="nav-link active" id="bl-pre-build-tab" data-toggle="pill" href="#bl-pre-build" role="tab" aria-controls="bl-pre-build" aria-selected="true" style="padding-left:0;">Pre-build Logs</a>
              </li>
              <li class="nav-item">
                <a class="nav-link" id="bl-linter-logs" data-toggle="pill" href="#bl-linter-logs" role="tab" aria-controls="bl-linter-logs" aria-selected="true" style="padding-left:0;">Targetfile Linting Logs</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="bl-build-logs" data-toggle="pill" href="#bl-build-logs" role="tab" aria-controls="bl-build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
              </li>
              <li class="nav-item">
                <a class="nav-link" id="bl-scan-logs" data-toggle="pill" href="#bl-scan-logs" role="tab" aria-controls="bl-scan-logs" aria-selected="true" style="padding-left:0;">Scan Logs</a>
@@ -84,9 +84,9 @@
            <ul>
         </div-->
         {{ if ne .TargetFile "" }}
-          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">i
+          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">
             <p>
-               Source Repo: {{ .SourceRepo }}
+            Source Repo: <a href={{ .SourceRepo }}>{{ .SourceRepo }}</a>
                <br/>
             </p>
             <pre class="highlight-code"><code class="dockerfile">{{ .TargetFile }}</code></pre>
@@ -100,6 +100,11 @@
           </div>
         {{ end }}
     </div>
+    <div class="tab-content" id="build-logs-tabContent">
+
+        <div class="tab-pane fade show active" id="build-logs" role="tabpanel" aria-labelledby="bl-build-logs">
+            {{ .BuildLogs.BuildLog }}
+        </div>
 
     </div>
     {{template "footer" .}}
