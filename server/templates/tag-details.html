@@ -26,65 +26,58 @@
     oci:{{ .Image }}:{{ .Tag }}
     </p>
 
-      <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+      <ul class="nav nav-tabs mb-3" id="master-tab">
         <li class="nav-item">
-          <a class="nav-link active" id="build-logs-tab" data-toggle="pill" href="#build-logs" role="tab" aria-controls="build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+          <a class="nav-link active" id="build-logs-tab" href="#build-logs" style="padding-left:0;">Build Logs</a>
         </li>
-        <!--li class="nav-item">
-          <a class="nav-link" id="weekly-scan-logs-tab" data-toggle="pill" href="#weekly-scan-logs" role="tab" aria-controls="weekly-scan-logs" aria-selected="true" style="padding-left:0;">Weekly Scan Logs</a>
-        </li-->
 
         {{ if ne .TargetFile "" }}
         <li class="nav-item">
-          <a class="nav-link" id="dockerfile-tab" data-toggle="pill" href="#dockerfile" role="tab" aria-controls="dockerfile" aria-selected="false">Dockerfile</a>
+          <a class="nav-link" id="dockerfile-tab" href="#dockerfile">Dockerfile</a>
         </li>
         {{ end }}
         {{ if ne .Readme "" }}
         <li class="nav-item">
-          <a class="nav-link" id="description-tab" data-toggle="pill" href="#description" role="tab" aria-controls="description" aria-selected="false">Description</a>
+          <a class="nav-link" id="description-tab" href="#description">Description</a>
         </li>
         {{ end }}
       </ul>
-
-      <div class="tab-content" id="pills-tabContent">
-
-        <div class="tab-pane fade show active" id="build-logs" role="tabpanel" aria-labelledby="build-logs-tab">
-
-           <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+      <div class="tab-content" id="master-tabContent">
+	<div class="tab-pane fade active in" id="build-logs">
+	   <div class="tabbable">
+           <ul class="nav nav-tabs mb-3" id="bl-tab">
              <li class="nav-item">
-               <a class="nav-link" id="bl-build-logs" data-toggle="pill" href="#bl-build-logs-content" role="tab" aria-controls="bl-build-logs" aria-selected="true" style="padding-left:0;">Build Logs</a>
+               <a class="nav-link active" id="bl-build-logs" href="#bl-build-logs-content">Build Logs</a>
              </li>
              <li class="nav-item">
-               <a class="nav-link active" id="bl-pre-build-tab" data-toggle="pill" href="#bl-pre-build" role="tab" aria-controls="bl-pre-build" aria-selected="true" style="padding-left:0;">Pre-build Logs</a>
+               <a class="nav-link" id="bl-pre-build-tab" href="#bl-pre-build">Pre-build Logs</a>
              </li>
              <li class="nav-item">
-               <a class="nav-link" id="bl-linter-logs" data-toggle="pill" href="#bl-linter-logs" role="tab" aria-controls="bl-linter-logs" aria-selected="true" style="padding-left:0;">Targetfile Linting Logs</a>
+               <a class="nav-link" id="bl-linter-logs" href="#bl-linter-logs">Targetfile Linting Logs</a>
              </li>
              <li class="nav-item">
-               <a class="nav-link" id="bl-scan-logs" data-toggle="pill" href="#bl-scan-logs" role="tab" aria-controls="bl-scan-logs" aria-selected="true" style="padding-left:0;">Scan Logs</a>
+               <a class="nav-link" id="bl-scan-logs" href="#bl-scan-logs">Scan Logs</a>
              </li>
            <ul>
-        </div>
+	    <div class="tab-content" id="bl-tabContent">
+		<div class="tab-pane fade active in" id="bl-build-logs-content">
+	            {{ .BuildLogs.BuildLog }}
+		</div>
+		<div class="tab-pane fade" id="bl-pre-build">
+	            {{ .BuildLogs.PreBuildLog }}
+		</div>
+		<div class="tab-pane fade" id="bl-linter-logs">
+	            {{ .BuildLogs.LintLog }}
+		</div>
+		<div class="tab-pane fade" id="bl-scan-logs">
+	            {{ .BuildLogs.ScanLog }}
+		</div>
+	    </div>
+      </div>
+	</div>
 
-        <!-- div class="tab-pane fade show active" id="weekly-scan-logs" role="tabpanel" aria-labelledby="weekly-scan-logs-tab">
-
-           <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-             <li class="nav-item">
-               <a class="nav-link active" id="ws-rpm-update-tab" data-toggle="pill" href="#ws-rpm-update" role="tab" aria-controls="ws-rpm-update" aria-selected="true" style="padding-left:0;">RPM Update Scan</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="ws-rpm-verify-tab" data-toggle="pill" href="#ws-rpm-verify" role="tab" aria-controls="ws-rpm-verify" aria-selected="true" style="padding-left:0;">RPM Verify Scan</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="ws-container-cap" data-toggle="pill" href="#ws-container-cap" role="tab" aria-controls="ws-container-cap" aria-selected="true" style="padding-left:0;">Container Capability</a>
-             </li>
-             <li class="nav-item">
-               <a class="nav-link" id="ws-misc-update" data-toggle="pill" href="#ws-misc-update" role="tab" aria-controls="ws-misc-update" aria-selected="true" style="padding-left:0;">Miscellaneous Update</a>
-             </li>
-           <ul>
-        </div-->
         {{ if ne .TargetFile "" }}
-          <div class="tab-pane fade" id="dockerfile" role="tabpanel" aria-labelledby="dockerfile-tab">
+          <div class="tab-pane fade" id="dockerfile">
             <p>
             Source Repo: <a href={{ .SourceRepo }}>{{ .SourceRepo }}</a>
                <br/>
@@ -94,14 +87,12 @@
         {{ end }}
 
         {{ if ne .Readme "" }}
-            <div class="tab-pane fade" id="description" role="tabpanel" aria-labelledby="description-tab">
-          <div class="markdown-body">
+          <div class="tab-pane fade" id="description">
+          <p class="markdown-body">
           {{ .Readme }}
+	  </p>
           </div>
         {{ end }}
-    </div>
-    <div class="tab-content" id="bl-build-logs-content">
-            {{ .BuildLogs.BuildLog }}
     </div>
     {{template "footer" .}}
 

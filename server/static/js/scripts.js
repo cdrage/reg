@@ -102,5 +102,10 @@ if (clear_button) {
   });
 }
 
+$("ul.nav-tabs a").click(function (e) {
+  e.preventDefault();
+    $(this).tab('show');
+});
+
 // Load highlight on load..
 hljs.initHighlightingOnLoad();
