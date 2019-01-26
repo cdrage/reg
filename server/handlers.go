@@ -95,13 +95,14 @@ type ScanLogsGroup struct {
 
 //All the logs for builds
 type BuildLogsGroup struct {
-	BuildNumber string
-	PreBuildLog string        `json:"prebuild" mapstructure:"prebuild"`
-	LintLog     string        `json:"lint" mapstructure:"lint"`
-	BuildLog    string        `json:"build" mapstructure:"build"`
-	ScanLog     ScanLogsGroup `json:"scan" mapstructure:"scan"`
-	DeliveryLog string
-	NotifyLog   string
+	BuildNumber    string
+	PreBuildLog    string        `json:"prebuild" mapstructure:"prebuild"`
+	LintLog        string        `json:"lint" mapstructure:"lint"`
+	BuildLog       string        `json:"build" mapstructure:"build"`
+	ScanLog        ScanLogsGroup `json:"scan" mapstructure:"scan"`
+	DeliveryLog    string
+	NotifyLog      string
+	ScanLogContent string
 }
 
 type BuildDetails struct {
@@ -404,7 +405,9 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	buildDetails.SourceRepo = apiTargetFile.SourceRepo
 	buildDetails.Readme = retrieveContent(apiTargetFile.SourceRepo + "README.md")
 	buildDetails.BuildLogs = apiBuildDetails.BuildLogs
+	buildDetails.BuildLogs.ScanLogContent = apiBuildDetails.BuildLogs.ScanLog.ScannerName[0].Logs
 	buildDetails.PreBuildRequested = apiTargetFile.PreBuildRequested
+	buildDetails.BuildStatus = apiBuildDetails.BuildStatus
 
 	if err := tmpl.ExecuteTemplate(w, "tagDetails", buildDetails); err != nil {
 		logrus.WithFields(logrus.Fields{

@@ -14,6 +14,7 @@
           e.preventDefault();
           $(this).tab('show');
        });
+       $('[href="#dockerfile"]').tab('show');
      });
   </script>
 </head>
@@ -74,30 +75,30 @@
                    <a class="nav-link active" id="bl-build-logs" href="#bl-build-logs-content">Build Logs</a>
                  </li>
                  <li class="nav-item">
-                   <a class="nav-link" id="bl-pre-build-tab" href="#bl-pre-build">Pre-build Logs</a>
+                   <a class="nav-link" id="bl-pre-build" href="#bl-pre-build-content">Pre-build Logs</a>
                  </li>
                  <li class="nav-item">
-                   <a class="nav-link" id="bl-linter-logs" href="#bl-linter-logs">Targetfile Linting Logs</a>
+                   <a class="nav-link" id="bl-linter-logs" href="#bl-linter-logs-content">Targetfile Linting Logs</a>
                  </li>
                  <li class="nav-item">
-                   <a class="nav-link" id="bl-scan-logs" href="#bl-scan-logs">Scan Logs</a>
+                   <a class="nav-link" id="bl-scan-logs" href="#bl-scan-logs-content">Scan Logs</a>
                  </li>
                <ul>
                <div class="tab-content" id="bl-tabContent">
                     <div class="tab-pane fade active in" id="bl-build-logs-content">
                         <br />
-                        <pre><code class="html">{{ .BuildLogs.BuildLog }}</code></pre>
+                        <pre><code class="accesslog">{{ .BuildLogs.BuildLog }}</code></pre>
                     </div>
-                    <div class="tab-pane fade" id="bl-pre-build">
+                    <div class="tab-pane fade" id="bl-pre-build-content">
                         <br />
-                        <pre><code class="html">{{ .BuildLogs.PreBuildLog }}</code></pre>
+                        <pre><code class="accesslog">{{ .BuildLogs.PreBuildLog }}</code></pre>
                     </div>
-                    <div class="tab-pane fade" id="bl-linter-logs">
+                    <div class="tab-pane fade" id="bl-linter-logs-content">
                         <br />
-                        <pre><code class="html">{{ .BuildLogs.LintLog }}</code></pre>
+                        <pre><code class="accesslog">{{ .BuildLogs.LintLog }}</code></pre>
                     </div>
-                    <div class="tab-pane fade" id="bl-scan-logs">
-                        {{ .BuildLogs.ScanLog }}
+                    <div class="tab-pane fade" id="bl-scan-logs-content">
+                        <pre><code class="accesslog">{{ .BuildLogs.ScanLogContent }}</code></pre>
                     </div>
                 </div>
              </div>
