@@ -182,7 +182,7 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 }
 
 func readTagFileContent(app_id string, job_id string, desired_tag string, content_type string) string {
-	content_path := path.Join(IMAGE_PULL_MOUNT, "%s/%s/%s/%s", app_id, job_id, desired_tag, content_type)
+	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag, content_type)
 	data, err := ioutil.ReadFile(content_path)
 	if err != nil {
 		logrus.Errorf("Could not retrieve the image count: %v\n", err)
