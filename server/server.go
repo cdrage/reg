@@ -27,12 +27,13 @@ const (
 )
 
 var (
-	updating  = false
-	r         *registry.Registry
-	cl        *clair.Clair
-	tmpl      *template.Template
-	APIURL    = "registryApi.serverAddress"
-	NAMESPACE = "pipeline"
+	updating         = false
+	r                *registry.Registry
+	cl               *clair.Clair
+	tmpl             *template.Template
+	APIURL           = "registryApi.serverAddress"
+	NAMESPACE        = "pipeline"
+	IMAGE_PULL_MOUNT = "/var/image_pull"
 )
 
 // preload initializes any global options and configuration
@@ -103,6 +104,14 @@ func main() {
 		cli.StringFlag{
 			Name:  "apiserver",
 			Usage: "API server endpoint for retrieving build details",
+		},
+		cli.StringFlag{
+			Name:  "osnamespace",
+			Usage: "OKD namespace under which the container pipeline service is running",
+		},
+		cli.StringFlag{
+			Name:  "countmount",
+			Usage: "Mount point location for image pull count generation",
 		},
 	}
 	app.Action = func(c *cli.Context) error {

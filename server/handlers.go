@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -179,8 +181,13 @@ func getAPIData(uri string, datatype string) (interface{}, error) {
 	return data, err
 }
 
-func getImagePullCount(app_id string, job_id string, desired_tag string) string {
-	return "pull_count"
+func readTagFileContent(app_id string, job_id string, desired_tag string, content_type string) string {
+	content_path := path.Join(IMAGE_PULL_MOUNT, "%s/%s/%s/%s", app_id, job_id, desired_tag, content_type)
+	data, err := ioutil.ReadFile(content_path)
+	if err != nil {
+		logrus.Errorf("Could not retrieve the image count: %v\n", err)
+	}
+	return string(data)
 }
 
 func retrieveContent(contentLink string) string {
@@ -308,7 +315,7 @@ func (rc *registryController) tagListHandler(w http.ResponseWriter, r *http.Requ
 		tag_detail.Image = imageName
 		tag_detail.BuildStatus = tag.BuildStatus
 		tag_detail.Tag = tag.Tag
-		tag_detail.PullCount = getImagePullCount(app_id, job_id, tag.Tag)
+		tag_detail.PullCount = readTagFileContent(app_id, job_id, tag.Tag, "count")
 		tag_detail.CreatedAt = getImageCreatedDate(rc, imageName, tag.Tag)
 
 		tagList.Tags = append(tagList.Tags, tag_detail)
@@ -375,6 +382,8 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 		logrus.Errorf("Could not decode Target File %v", err)
 		return
 	}
+	tfl := strings.Split(apiTargetFile.TargetFileLink, "/")
+	targetFileName := tfl[len(tfl)-1]
 
 	var apiBuildDetails BuildDetails
 
@@ -401,9 +410,9 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 		Tag:            desired_tag,
 	}
 
-	buildDetails.TargetFile = retrieveContent(apiTargetFile.TargetFileLink)
+	buildDetails.TargetFile = readTagFileContent(app_id, job_id, desired_tag, targetFileName)
 	buildDetails.SourceRepo = apiTargetFile.SourceRepo
-	buildDetails.Readme = retrieveContent(apiTargetFile.SourceRepo + "README.md")
+	buildDetails.Readme = readTagFileContent(app_id, job_id, desired_tag, "README.md")
 	buildDetails.BuildLogs = apiBuildDetails.BuildLogs
 	buildDetails.BuildLogs.ScanLogContent = apiBuildDetails.BuildLogs.ScanLog.ScannerName[0].Logs
 	buildDetails.PreBuildRequested = apiTargetFile.PreBuildRequested

@@ -36,6 +36,8 @@
     oci:{{ .Image }}:{{ .Tag }}
     </p>
 
+    <pre><code class="text">Latest Build Staus: {{ .BuildStatus }}</code></pre>
+
       <ul class="nav nav-tabs mb-3" id="master-tab">
         {{ if ne .TargetFile "" }}
         <li class="nav-item">
