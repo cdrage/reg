@@ -4,17 +4,21 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/microcosm-cc/bluemonday"
+	//	"github.com/microcosm-cc/bluemonday"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/russross/blackfriday.v2"
+	//	"gopkg.in/russross/blackfriday.v2"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"reg/clair"
 	"reg/registry"
@@ -82,8 +86,10 @@ type TagList struct {
 type TargetFile struct {
 	Meta              Meta   `json:"meta" mapstructure:"meta"`
 	PreBuildRequested bool   `json:"prebuild" mapstructure:"prebuild"`
-	TargetFileLink    string `json:"target_file_link" mapstructure:"target_file_link"`
+	TargetFilePath    string `json:"target_file_path" mapstructure:"target_file_path"`
 	SourceRepo        string `json:"source_repo" mapstructure:"source_repo"`
+	SourceBranch      string `json:"source_branch" mapstructure:"source_branch"`
+	LatestBuildNumber string `json:"latest_build_number" mapstructure:"latest_build_number"`
 }
 
 type ScanLog struct {
@@ -185,27 +191,86 @@ func readTagFileContent(app_id string, job_id string, desired_tag string, conten
 	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag, content_type)
 	data, err := ioutil.ReadFile(content_path)
 	if err != nil {
-		logrus.Errorf("Could not retrieve the image count: %v\n", err)
+		logrus.Errorf("Could not retrieve file content: %v\n", err)
 	}
 	return string(data)
 }
 
-func retrieveContent(contentLink string) string {
-	resp, err := http.Get(contentLink)
+func copyFileContent(src string, dst string) (err error) {
+	sfi, err := os.Stat(src)
 	if err != nil {
-		fmt.Printf("Error retirving content")
-		return ""
+		return
 	}
-	defer resp.Body.Close()
-	content, err := ioutil.ReadAll(resp.Body)
+	if !sfi.Mode().IsRegular() {
+		// cannot copy non-regular files (e.g., directories,
+		// symlinks, devices, etc.)
+		return fmt.Errorf("CopyFile: non-regular source file %s (%q)", sfi.Name(), sfi.Mode().String())
+	}
+	dfi, err := os.Stat(dst)
 	if err != nil {
-		fmt.Printf("Unable to read content")
-		return ""
+		if !os.IsNotExist(err) {
+			return
+		}
+	} else {
+		if !(dfi.Mode().IsRegular()) {
+			return fmt.Errorf("CopyFile: non-regular destination file %s (%q)", dfi.Name(), dfi.Mode().String())
+		}
+		if os.SameFile(sfi, dfi) {
+			return
+		}
+	}
+	if err = os.Link(src, dst); err == nil {
+		return
 	}
 
-	unsafe := blackfriday.Run([]byte(content))
-	html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-	return string(html)
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
+}
+
+func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested bool) {
+	//Git clone the source repo to fetch dockerfile and readme
+	_, err := git.PlainClone("/tmp/git_clone", false, &git.CloneOptions{
+		URL:           gitUrl,
+		ReferenceName: plumbing.ReferenceName(gitBranch),
+		SingleBranch:  true,
+	})
+	if err != nil {
+		logrus.Info("Could not clone the repo %v\n", gitUrl)
+	}
+	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag)
+	dockerfile_path := path.Join(content_path, targetFileName)
+	readme_path := path.Join(content_path, "README.md")
+	err = copyFileContent(path.Join("/tmp/git_clone", targetFiePath), dockerfile_path)
+	if err != nil {
+		logrus.Errorf("Could not copy the TargetFile")
+		if PreBuildRequested {
+			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "PreBuildRequestedNoTargetFile"), dockerfile_path)
+		} else {
+			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "TargetFileNotExists"), dockerfile_path)
+		}
+	}
+	err = copyFileContent(path.Join("/tmp/git_clone", "README.md"), readme_path)
+	if err != nil {
+		logrus.Info("Could not retrive the readme file")
+	}
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -382,7 +447,7 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 		logrus.Errorf("Could not decode Target File %v", err)
 		return
 	}
-	tfl := strings.Split(apiTargetFile.TargetFileLink, "/")
+	tfl := strings.Split(apiTargetFile.TargetFilePath, "/")
 	targetFileName := tfl[len(tfl)-1]
 
 	var apiBuildDetails BuildDetails
