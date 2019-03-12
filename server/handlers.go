@@ -196,6 +196,23 @@ func readTagFileContent(app_id string, job_id string, desired_tag string, conten
 	return string(data)
 }
 
+//This function checks if the dockerfile and readme is in sync or not
+//If there is new build triggered this returns false: means they are not in sync
+//Else it returns true and we do not have to fetch new dockerfile and readme
+func checkRepoUpdate(app_id string, job_id string, desired_tag string, latestBuildNumber string) bool {
+	repoUpdated := false
+	buildNumberFile := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag, "BuildNumber")
+	processedBuildNumber := readTagFileContent(app_id, job_id, desired_tag, "BuildNumber")
+	if processedBuildNumber != "" {
+		if latestBuildNumber != processedBuildNumber {
+			repoUpdated = false
+		}
+	}
+	latestBuildNumberByte := []byte(latestBuildNumber)
+	ioutil.WriteFile(buildNumberFile, latestBuildNumberByte, 0777)
+	return repoUpdated
+}
+
 func copyFileContent(src string, dst string) (err error) {
 	sfi, err := os.Stat(src)
 	if err != nil {
@@ -449,6 +466,16 @@ func (rc *registryController) tagDetailsHandler(w http.ResponseWriter, r *http.R
 	}
 	tfl := strings.Split(apiTargetFile.TargetFilePath, "/")
 	targetFileName := tfl[len(tfl)-1]
+
+	repoUpdated := checkRepoUpdate(app_id, job_id, desired_tag, apiTargetFile.LatestBuildNumber)
+
+	if !repoUpdated {
+		getDockerFileReadme(
+			apiTargetFile.SourceRepo, apiTargetFile.SourceBranch,
+			apiTargetFile.TargetFilePath, targetFileName, app_id, job_id, desired_tag,
+			apiTargetFile.PreBuildRequested,
+		)
+	}
 
 	var apiBuildDetails BuildDetails
 
