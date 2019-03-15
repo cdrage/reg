@@ -270,7 +270,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 		SingleBranch:  true,
 	})
 	if err != nil {
-		logrus.Info("Could not clone the repo %v \t %v \n", err, gitUrl)
+		logrus.Info("Could not clone the repo %v \t %v \n", err, gitBranch)
 	}
 	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag)
 	dockerfile_path := path.Join(content_path, targetFileName)
