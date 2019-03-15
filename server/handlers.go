@@ -264,9 +264,10 @@ func copyFileContent(src string, dst string) (err error) {
 
 func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested bool) {
 	//Git clone the source repo to fetch dockerfile and readme
+	branchref := "refs/heads/" + gitBranch
 	_, err := git.PlainClone("/tmp/git_clone", false, &git.CloneOptions{
 		URL:           gitUrl,
-		ReferenceName: plumbing.ReferenceName(gitBranch),
+		ReferenceName: plumbing.ReferenceName(branchref),
 		SingleBranch:  true,
 	})
 	if err != nil {
