@@ -292,7 +292,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	if err != nil {
 		logrus.Info("Could not retrive the readme file")
 	}
-	clonePathExists, err = os.Stat(clonePath)
+	clonePathExists, err := os.Stat(clonePath)
 	if err != nil {
 		logrus.Info("Could not get the clone location %v", err)
 	} else {
