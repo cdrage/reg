@@ -228,6 +228,7 @@ func copyFileContent(src string, dst string) (err error) {
 	dfi, err := os.Stat(dst)
 	if err != nil {
 		if !os.IsNotExist(err) {
+			logrus.Info("File " + dst + " Already exists")
 			return
 		}
 	} else {
