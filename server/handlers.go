@@ -267,7 +267,8 @@ func copyFileContent(src string, dst string) (err error) {
 func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested bool) {
 	//Git clone the source repo to fetch dockerfile and readme
 	branchref := "refs/heads/" + gitBranch
-	_, err := git.PlainClone("/tmp/git_clone", false, &git.CloneOptions{
+	clonePath := "/tmp/git_clone/" + app_id + "_" + job_id + "_" + desired_tag
+	_, err := git.PlainClone(clonePath, false, &git.CloneOptions{
 		URL:           gitUrl,
 		ReferenceName: plumbing.ReferenceName(branchref),
 		SingleBranch:  true,
@@ -278,7 +279,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag)
 	dockerfile_path := path.Join(content_path, targetFileName)
 	readme_path := path.Join(content_path, "README.md")
-	err = copyFileContent(path.Join("/tmp/git_clone", targetFiePath), dockerfile_path)
+	err = copyFileContent(path.Join(clonePath, targetFiePath), dockerfile_path)
 	if err != nil {
 		logrus.Errorf("Could not copy the TargetFile")
 		if PreBuildRequested {
@@ -287,9 +288,16 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "TargetFileNotExists"), dockerfile_path)
 		}
 	}
-	err = copyFileContent(path.Join("/tmp/git_clone", "README.md"), readme_path)
+	err = copyFileContent(path.Join(clonePath, "README.md"), readme_path)
 	if err != nil {
 		logrus.Info("Could not retrive the readme file")
+	}
+	clonePathExists, err = os.Stat(clonePath)
+	if err != nil {
+		logrus.Info("Could not get the clone location %v", err)
+	} else {
+		err = os.RemoveAll(clonePath)
+		logrus.Info("Could not remove cloned repo %v", err)
 	}
 }
 
