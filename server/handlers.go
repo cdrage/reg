@@ -207,6 +207,8 @@ func checkRepoUpdate(app_id string, job_id string, desired_tag string, latestBui
 		if latestBuildNumber != processedBuildNumber {
 			repoUpdated = false
 		}
+	} else {
+		logrus.Info("Build is procesed for first time")
 	}
 	latestBuildNumberByte := []byte(latestBuildNumber)
 	ioutil.WriteFile(buildNumberFile, latestBuildNumberByte, 0777)
