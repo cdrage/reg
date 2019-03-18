@@ -281,7 +281,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	readme_path := path.Join(content_path, "README.md")
 	err = copyFileContent(path.Join(clonePath, targetFiePath), dockerfile_path)
 	if err != nil {
-		logrus.Errorf("Could not copy the TargetFile")
+		logrus.Errorf("Could not copy the TargetFile %v", err)
 		if PreBuildRequested {
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "PreBuildRequestedNoTargetFile"), dockerfile_path)
 		} else {
@@ -290,14 +290,16 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	}
 	err = copyFileContent(path.Join(clonePath, "README.md"), readme_path)
 	if err != nil {
-		logrus.Info("Could not retrive the readme file")
+		logrus.Info("Could not retrive the readme file %v", err)
 	}
 	clonePathExists, err := os.Stat(clonePath)
 	if err != nil {
 		logrus.Info("Could not get the clone location %v", err)
 	} else {
 		err = os.RemoveAll(clonePath)
-		logrus.Info("Could not remove cloned repo %v", err)
+		if err != nil {
+			logrus.Info("Could not remove cloned repo %v", err)
+		}
 	}
 	logrus.Info("Clone data is %v", clonePathExists)
 }
