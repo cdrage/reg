@@ -299,6 +299,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 		err = os.RemoveAll(clonePath)
 		logrus.Info("Could not remove cloned repo %v", err)
 	}
+	logrus.Info("Clone data is %v", clonePathExists)
 }
 
 func (rc *registryController) landingPageHandler(w http.ResponseWriter, r *http.Request) {
