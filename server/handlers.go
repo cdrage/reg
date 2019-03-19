@@ -201,7 +201,8 @@ func readTagFileContent(app_id string, job_id string, desired_tag string, conten
 //Else it returns true and we do not have to fetch new dockerfile and readme
 func checkRepoUpdate(app_id string, job_id string, desired_tag string, latestBuildNumber string) bool {
 	repoUpdated := false
-	buildNumberFile := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag, "BuildNumber")
+	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag)
+	buildNumberFile := path.Join(content_path, "BuildNumber")
 	processedBuildNumber := readTagFileContent(app_id, job_id, desired_tag, "BuildNumber")
 	if processedBuildNumber != "" {
 		if latestBuildNumber != processedBuildNumber {
@@ -210,6 +211,18 @@ func checkRepoUpdate(app_id string, job_id string, desired_tag string, latestBui
 	} else {
 		logrus.Info("Build is procesed for first time")
 	}
+	//If the directory is not already existing create it
+	content_dir, err := os.Stat(content_path)
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(content_path, 0777)
+		if errDir != nil {
+			logrus.Errorf("Could not create the content dir")
+		}
+	} else {
+		logrus.Info("Content Dir is already existing")
+	}
+
+	//Write the latest build number to the file
 	latestBuildNumberByte := []byte(latestBuildNumber)
 	ioutil.WriteFile(buildNumberFile, latestBuildNumberByte, 0777)
 	return repoUpdated
@@ -278,6 +291,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 		logrus.Info("Could not clone the repo %v \t %v \n", err, gitBranch)
 	}
 	content_path := path.Join(IMAGE_PULL_MOUNT, app_id, job_id, desired_tag)
+
 	dockerfile_path := path.Join(content_path, targetFileName)
 	readme_path := path.Join(content_path, "README.md")
 	err = copyFileContent(path.Join(clonePath, targetFiePath), dockerfile_path)
