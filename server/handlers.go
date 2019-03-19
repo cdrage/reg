@@ -212,7 +212,7 @@ func checkRepoUpdate(app_id string, job_id string, desired_tag string, latestBui
 		logrus.Info("Build is procesed for first time")
 	}
 	//If the directory is not already existing create it
-	content_dir, err := os.Stat(content_path)
+	_, err := os.Stat(content_path)
 	if os.IsNotExist(err) {
 		errDir := os.MkdirAll(content_path, 0777)
 		if errDir != nil {
