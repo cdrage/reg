@@ -354,7 +354,16 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 		var project_detail Project
 		project_detail.Name = project.AppID + "/" + project.JobID
 		project_detail.URI = imageList.RegistryDomain + "/" + project_detail.Name
-		imageList.Projects = append(imageList.Projects, project_detail)
+		dataExists := false
+		for _, data := range imageList.Projects {
+			if data.Name == project_detail.Name {
+				dataExists = true
+				break
+			}
+		}
+		if !dataExists {
+			imageList.Projects = append(imageList.Projects, project_detail)
+		}
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "imageList", imageList); err != nil {
