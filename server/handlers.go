@@ -353,6 +353,9 @@ func (rc *registryController) imageListHandler(w http.ResponseWriter, r *http.Re
 	for _, project := range apiProjects.Projects {
 		var project_detail Project
 		project_detail.Name = project.AppID + "/" + project.JobID
+		if project.AppID == "library" {
+			project_detail.Name = project.JobID
+		}
 		project_detail.URI = imageList.RegistryDomain + "/" + project_detail.Name
 		dataExists := false
 		for _, data := range imageList.Projects {
