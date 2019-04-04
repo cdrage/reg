@@ -85,7 +85,7 @@ type TagList struct {
 
 type TargetFile struct {
 	Meta              Meta   `json:"meta" mapstructure:"meta"`
-	PreBuildRequested bool   `json:"prebuild" mapstructure:"prebuild"`
+	PreBuildRequested string `json:"prebuild" mapstructure:"prebuild"`
 	TargetFilePath    string `json:"target_file_path" mapstructure:"target_file_path"`
 	SourceRepo        string `json:"source_repo" mapstructure:"source_repo"`
 	SourceBranch      string `json:"source_branch" mapstructure:"source_branch"`
@@ -124,7 +124,7 @@ type BuildDetails struct {
 	IsLibrary         string
 	AppID             string
 	JobID             string
-	PreBuildRequested bool   `json:"pre-build" mapstructure:"pre-build"`
+	PreBuildRequested string `json:"pre-build" mapstructure:"pre-build"`
 	BuildNumber       string `json:"build" mapstructure:"build"`
 	FailedStage       string `json:"failed-stage" mapstructure:"failed-stage"`
 	BuildStatus       string `json:"status" mapstructure:"status"`
@@ -284,7 +284,7 @@ func copyFileContent(src string, dst string) (err error) {
 	return
 }
 
-func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested bool) {
+func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested string) {
 	//Git clone the source repo to fetch dockerfile and readme
 	branchref := "refs/heads/" + gitBranch
 	clonePath := "/tmp/git_clone/" + app_id + "_" + job_id + "_" + desired_tag
@@ -303,7 +303,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	err = copyFileContent(path.Join(clonePath, targetFiePath), dockerfile_path)
 	if err != nil {
 		logrus.Errorf("Could not copy the TargetFile %v", err)
-		if PreBuildRequested == true {
+		if PreBuildRequested == "true" {
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "PreBuildRequestedNoTargetFile"), dockerfile_path)
 		} else {
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "TargetFileNotExists"), dockerfile_path)
