@@ -284,7 +284,7 @@ func copyFileContent(src string, dst string) (err error) {
 	return
 }
 
-func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested string) {
+func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, targetFileName string, app_id string, job_id string, desired_tag string, PreBuildRequested bool) {
 	//Git clone the source repo to fetch dockerfile and readme
 	branchref := "refs/heads/" + gitBranch
 	clonePath := "/tmp/git_clone/" + app_id + "_" + job_id + "_" + desired_tag
