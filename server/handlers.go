@@ -303,7 +303,7 @@ func getDockerFileReadme(gitUrl string, gitBranch string, targetFiePath string, 
 	err = copyFileContent(path.Join(clonePath, targetFiePath), dockerfile_path)
 	if err != nil {
 		logrus.Errorf("Could not copy the TargetFile %v", err)
-		if PreBuildRequested == "true" {
+		if PreBuildRequested == true {
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "PreBuildRequestedNoTargetFile"), dockerfile_path)
 		} else {
 			_ = copyFileContent(path.Join(IMAGE_PULL_MOUNT, "TargetFileNotExists"), dockerfile_path)
