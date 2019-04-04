@@ -85,7 +85,7 @@ type TagList struct {
 
 type TargetFile struct {
 	Meta              Meta   `json:"meta" mapstructure:"meta"`
-	PreBuildRequested string `json:"prebuild" mapstructure:"prebuild"`
+	PreBuildRequested bool   `json:"prebuild" mapstructure:"prebuild"`
 	TargetFilePath    string `json:"target_file_path" mapstructure:"target_file_path"`
 	SourceRepo        string `json:"source_repo" mapstructure:"source_repo"`
 	SourceBranch      string `json:"source_branch" mapstructure:"source_branch"`
@@ -124,7 +124,7 @@ type BuildDetails struct {
 	IsLibrary         string
 	AppID             string
 	JobID             string
-	PreBuildRequested string `json:"pre-build" mapstructure:"pre-build"`
+	PreBuildRequested bool   `json:"pre-build" mapstructure:"pre-build"`
 	BuildNumber       string `json:"build" mapstructure:"build"`
 	FailedStage       string `json:"failed-stage" mapstructure:"failed-stage"`
 	BuildStatus       string `json:"status" mapstructure:"status"`
